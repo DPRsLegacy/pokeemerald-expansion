@@ -1047,6 +1047,38 @@ static const struct InGameTrade sIngameTrades[] =
         .otGender = FEMALE,
         .sheen = 10,
         .requestedSpecies = SPECIES_SKITTY
+    },
+    [INGAME_TRADE_EEVEE] =
+    {
+        .nickname = _("EEVEE"),
+        .species = SPECIES_EEVEE,
+        .ivs = {10, 10, 10, 10, 10, 10},
+        .abilityNum = 0,
+        .otId = 47821,
+        .conditions = {10, 10, 10, 10, 10},
+        .personality = 0x8A4E1273,  // Regular Eevee personality
+        .heldItem = ITEM_NONE,
+        .mailNum = -1,
+        .otName = _("MOM"),
+        .otGender = FEMALE,
+        .sheen = 0,
+        .requestedSpecies = SPECIES_TREECKO
+    },
+    [INGAME_TRADE_EEVEE_SHINY] =
+    {
+        .nickname = _("EEVEE"),
+        .species = SPECIES_EEVEE,
+        .ivs = {10, 10, 10, 10, 10, 10},
+        .abilityNum = 0,
+        .otId = 47821,
+        .conditions = {10, 10, 10, 10, 10},
+        .personality = 47821,  // Personality value that makes XOR with OT ID result in shiny
+        .heldItem = ITEM_NONE,
+        .mailNum = -1,
+        .otName = _("MOM"),
+        .otGender = FEMALE,
+        .sheen = 0,
+        .requestedSpecies = SPECIES_TREECKO
     }
 };
 

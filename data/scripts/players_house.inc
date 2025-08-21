@@ -304,7 +304,7 @@ PlayersHouse_1F_EventScript_Mom::
 	goto_if_eq VAR_LITTLEROOT_HOUSES_STATE_MAY, 4, PlayersHouse_1F_EventScript_DontPushYourselfTooHard
 	goto_if_eq VAR_LITTLEROOT_HOUSES_STATE_BRENDAN, 4, PlayersHouse_1F_EventScript_DontPushYourselfTooHard
 	goto_if_set FLAG_HAS_MATCH_CALL, PlayersHouse_1F_EventScript_TryRegisterMom
-	goto_if_set FLAG_RESCUED_BIRCH, PlayersHouse_1F_EventScript_MomHealsParty
+	goto_if_set FLAG_RESCUED_BIRCH, PlayersHouse_1F_EventScript_CheckAfterRescue
 	goto_if_eq VAR_TEMP_1, 1, PlayersHouse_1F_EventScript_SeeYouHoney
 	goto_if_eq VAR_LITTLEROOT_INTRO_STATE, 7, PlayersHouse_1F_EventScript_DidYouMeetProfBirch
 	msgbox PlayersHouse_1F_Text_IsntItNiceInHere, MSGBOX_DEFAULT
@@ -314,6 +314,12 @@ PlayersHouse_1F_EventScript_Mom::
 PlayersHouse_1F_EventScript_DontPushYourselfTooHard::
 	msgbox PlayersHouse_1F_Text_DontPushYourselfTooHard, MSGBOX_DEFAULT
 	release
+	end
+
+PlayersHouse_1F_EventScript_CheckAfterRescue::
+	@ Check if we should show the Eevee menu or just heal
+	goto_if_set FLAG_SYS_POKEMON_GET, PlayersHouse_1F_EventScript_CheckEeveeSwap
+	goto PlayersHouse_1F_EventScript_MomHealsParty
 	end
 
 PlayersHouse_1F_EventScript_TryRegisterMom::
@@ -327,11 +333,12 @@ PlayersHouse_1F_EventScript_TryRegisterMom::
 	closemessage
 	delay 30
 	setflag FLAG_ENABLE_MOM_MATCH_CALL
-	release
+	goto PlayersHouse_1F_EventScript_CheckGiveAmuletCoin
 	end
 
 PlayersHouse_1F_EventScript_CheckGiveAmuletCoin::
 	goto_if_set FLAG_BADGE05_GET, PlayersHouse_1F_EventScript_TryGiveAmuletCoin
+	goto_if_set FLAG_SYS_POKEMON_GET, PlayersHouse_1F_EventScript_CheckEeveeSwap
 	goto PlayersHouse_1F_EventScript_MomHealsParty
 
 PlayersHouse_1F_EventScript_TryGiveAmuletCoin::
@@ -343,6 +350,83 @@ PlayersHouse_1F_EventScript_TryGiveAmuletCoin::
 	setflag FLAG_RECEIVED_AMULET_COIN
 	release
 	end
+
+PlayersHouse_1F_EventScript_CheckEeveeSwap::
+	goto_if_set FLAG_UNUSED_0x020, PlayersHouse_1F_EventScript_MomHealsParty
+	call PlayersHouse_1F_EventScript_MomMenuWithEevee
+	release
+	end
+
+PlayersHouse_1F_EventScript_MomMenuWithEevee::
+	msgbox PlayersHouse_1F_Text_MomMenuIntro, MSGBOX_DEFAULT
+	multichoice 0, 0, MULTI_MOM_MENU, FALSE
+	switch VAR_RESULT
+	case 0, PlayersHouse_1F_EventScript_MomHeal
+	case 1, PlayersHouse_1F_EventScript_AskAboutEevee
+	case 2, PlayersHouse_1F_EventScript_MomGoodbye
+	case MULTI_B_PRESSED, PlayersHouse_1F_EventScript_MomGoodbye
+	end
+
+PlayersHouse_1F_EventScript_MomHeal::
+	call PlayersHouse_1F_EventScript_HealParty
+	return
+
+PlayersHouse_1F_EventScript_AskAboutEevee::
+	msgbox PlayersHouse_1F_Text_WouldYouLikeEeveeSwap, MSGBOX_YESNO
+	goto_if_eq VAR_RESULT, NO, PlayersHouse_1F_EventScript_MomMenuWithEevee
+	special ChoosePartyMon
+	waitstate
+	copyvar VAR_0x800A, VAR_0x8004
+	goto_if_eq VAR_0x8004, PARTY_NOTHING_CHOSEN, PlayersHouse_1F_EventScript_MomMenuWithEevee
+	copyvar VAR_0x8005, VAR_0x800A
+	specialvar VAR_RESULT, GetTradeSpecies
+	copyvar VAR_0x800B, VAR_RESULT
+	@ Check if selected Pokemon is any of the three starters
+	goto_if_eq VAR_RESULT, SPECIES_TREECKO, PlayersHouse_1F_EventScript_ValidStarter
+	goto_if_eq VAR_RESULT, SPECIES_TORCHIC, PlayersHouse_1F_EventScript_ValidStarter
+	goto_if_eq VAR_RESULT, SPECIES_MUDKIP, PlayersHouse_1F_EventScript_ValidStarter
+	goto PlayersHouse_1F_EventScript_NotAStarter
+	end
+
+PlayersHouse_1F_EventScript_ValidStarter::
+	@ Randomize for 18% shiny odds - roughly 18 out of 100 values will result in shiny
+	random 100
+	goto_if_lt VAR_RESULT, 18, PlayersHouse_1F_EventScript_ShinyEeveeTrade
+	goto PlayersHouse_1F_EventScript_RegularEeveeTrade
+	end
+
+PlayersHouse_1F_EventScript_ShinyEeveeTrade::
+	@ Use the shiny trade data (18% chance)
+	setvar VAR_0x8008, INGAME_TRADE_EEVEE_SHINY
+	call PlayersHouse_1F_EventScript_PerformTrade
+	return
+
+PlayersHouse_1F_EventScript_RegularEeveeTrade::
+	@ Use normal trade data (82% chance)
+	setvar VAR_0x8008, INGAME_TRADE_EEVEE
+	call PlayersHouse_1F_EventScript_PerformTrade
+	return
+
+PlayersHouse_1F_EventScript_PerformTrade::
+	copyvar VAR_0x8004, VAR_0x8008
+	copyvar VAR_0x8005, VAR_0x800A
+	special CreateInGameTradePokemon
+	special DoInGameTradeScene
+	waitstate
+	@ Manually register Eevee in Pokedex since trade system doesn't automatically do it
+	setseenmon SPECIES_EEVEE
+	setcaughtmon SPECIES_EEVEE
+	msgbox PlayersHouse_1F_Text_TakeGoodCareOfEevee, MSGBOX_DEFAULT
+	setflag FLAG_UNUSED_0x020
+	return
+
+PlayersHouse_1F_EventScript_NotAStarter::
+	msgbox PlayersHouse_1F_Text_NotAStarter, MSGBOX_DEFAULT
+	return
+
+PlayersHouse_1F_EventScript_MomGoodbye::
+	msgbox PlayersHouse_1F_Text_MomGoodbye, MSGBOX_DEFAULT
+	return
 
 PlayersHouse_1F_EventScript_MomHealsParty::
 	msgbox PlayersHouse_1F_Text_YouShouldRestABit, MSGBOX_DEFAULT
@@ -673,3 +757,34 @@ PlayersHouse_1F_Movement_PlayerApproachTVForLatiFemale:
 EventScript_RunningShoesManual::
 	msgbox PlayersHouse_1F_Text_RunningShoesManual, MSGBOX_SIGN
 	end
+
+@ Text for Eevee swap functionality
+PlayersHouse_1F_Text_WouldYouLikeEeveeSwap:
+	.string "MOM: Oh, {PLAYER}! I have something\n"
+	.string "special for you.\p"
+	.string "A friend of mine has this adorable\n"
+	.string "EEVEE that needs a good trainer.\p"
+	.string "Would you like to trade your starter\n"
+	.string "POKéMON for this EEVEE?\p"
+	.string "It might be very special!\n"
+	.string "EEVEE can evolve into many forms!$"
+
+PlayersHouse_1F_Text_MomMenuIntro:
+	.string "MOM: Hello, sweetie! How are you doing?\n"
+	.string "What can I do for you?$"
+
+PlayersHouse_1F_Text_MomGoodbye:
+	.string "MOM: Take care, honey!$"
+
+PlayersHouse_1F_Text_TakeGoodCareOfEevee:
+	.string "MOM: Please take good care of\n"
+	.string "EEVEE! I know you two will be\l"
+	.string "great friends!$"
+
+PlayersHouse_1F_Text_NotAStarter:
+	.string "MOM: Oh sweetie, I was hoping to\n"
+	.string "trade for your starter POKéMON.\p"
+	.string "You know, the TREECKO, TORCHIC, or\n"
+	.string "MUDKIP that PROF. BIRCH gave you?\p"
+	.string "Maybe you can bring one of them\n"
+	.string "another time?$"
