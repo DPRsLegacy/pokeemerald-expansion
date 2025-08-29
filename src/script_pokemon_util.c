@@ -89,6 +89,34 @@ void HasEnoughMonsForDoubleBattle(void)
     }
 }
 
+// Check if player is "Karrpy" and has Wailord starter - skip mom's trade dialogue
+void CheckKarrpyWailordStarter(void)
+{
+    u8 *playerName = gSaveBlock2Ptr->playerName;
+    
+    // Check for "Karrpy" using Pokemon character encoding (from charmap.txt)
+    // K=0xC5, a=0xD5, r=0xE6, r=0xE6, p=0xE4, y=0xED
+    bool8 isKarrpy = (playerName[0] == 0xC5 &&  // 'K'
+                      playerName[1] == 0xD5 &&  // 'a'
+                      playerName[2] == 0xE6 &&  // 'r'
+                      playerName[3] == 0xE6 &&  // 'r'
+                      playerName[4] == 0xE4 &&  // 'p'
+                      playerName[5] == 0xED);   // 'y'
+    
+    // If player is "Karrpy" and has Wailord as first Pokemon, return TRUE (skip trade)
+    if (isKarrpy && gPlayerPartyCount > 0)
+    {
+        u16 firstPokemonSpecies = GetMonData(&gPlayerParty[0], MON_DATA_SPECIES);
+        if (firstPokemonSpecies == SPECIES_WAILORD)
+        {
+            gSpecialVar_Result = TRUE;
+            return;
+        }
+    }
+    
+    gSpecialVar_Result = FALSE;
+}
+
 static bool8 CheckPartyMonHasHeldItem(u16 item)
 {
     int i;
@@ -472,12 +500,35 @@ static u32 ScriptGiveMonParameterized(u8 side, u8 slot, u16 species, u8 level, u
     return sentToPc;
 }
 
+// Check if this is the first starter being given
+
+
 u32 ScriptGiveMon(u16 species, u8 level, u16 item)
 {
     u8 evs[NUM_STATS]        = {0, 0, 0, 0, 0, 0};
     u8 ivs[NUM_STATS]        = {MAX_PER_STAT_IVS + 1, MAX_PER_STAT_IVS + 1, MAX_PER_STAT_IVS + 1,   // We pass "MAX_PER_STAT_IVS + 1" here to ensure that
                                 MAX_PER_STAT_IVS + 1, MAX_PER_STAT_IVS + 1, MAX_PER_STAT_IVS + 1};  // ScriptGiveMonParameterized won't touch the stats' IV.
     u16 moves[MAX_MON_MOVES] = {MOVE_NONE, MOVE_NONE, MOVE_NONE, MOVE_NONE};
+
+    // Easter egg: if player name is "Karrpy" and this is the first starter, give Wailord instead
+    if ((species == SPECIES_TREECKO || species == SPECIES_TORCHIC || species == SPECIES_MUDKIP) && gPlayerPartyCount == 0)
+    {
+        u8 *playerName = gSaveBlock2Ptr->playerName;
+        
+        // Check for "Karrpy" using Pokemon character encoding (from charmap.txt)
+        // K=0xC5, a=0xD5, r=0xE6, r=0xE6, p=0xE4, y=0xED
+        if (playerName[0] == 0xC5 &&  // 'K'
+            playerName[1] == 0xD5 &&  // 'a'
+            playerName[2] == 0xE6 &&  // 'r'
+            playerName[3] == 0xE6 &&  // 'r'
+            playerName[4] == 0xE4 &&  // 'p'
+            playerName[5] == 0xED)    // 'y'
+        {
+            // Replace starter with level 1 Wailord that only knows Rest
+            moves[0] = MOVE_REST;
+            return ScriptGiveMonParameterized(0, PARTY_SIZE, SPECIES_WAILORD, 1, item, ITEM_POKE_BALL, NUM_NATURES, NUM_ABILITY_PERSONALITY, MON_GENDERLESS, evs, ivs, moves, FALSE, FALSE, NUMBER_OF_MON_TYPES, 0);
+        }
+    }
 
     return ScriptGiveMonParameterized(0, PARTY_SIZE, species, level, item, ITEM_POKE_BALL, NUM_NATURES, NUM_ABILITY_PERSONALITY, MON_GENDERLESS, evs, ivs, moves, FALSE, FALSE, NUMBER_OF_MON_TYPES, 0);
 }

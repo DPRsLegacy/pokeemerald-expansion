@@ -8,6 +8,7 @@
 #include "task.h"
 #include "safari_zone.h"
 #include "script.h"
+#include "constants/characters.h"
 #include "event_data.h"
 #include "metatile_behavior.h"
 #include "field_player_avatar.h"
@@ -866,6 +867,8 @@ void ChooseStarter(void)
     SetMainCallback2(CB2_ChooseStarter);
     gMain.savedCallback = CB2_GiveStarter;
 }
+
+
 
 static void CB2_GiveStarter(void)
 {

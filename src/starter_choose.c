@@ -350,6 +350,7 @@ static const struct SpriteTemplate sSpriteTemplate_StarterCircle =
 // .text
 u16 GetStarterPokemon(u16 chosenStarterId)
 {
+    // Return normal starter for UI purposes - easter egg handled in CB2_GiveStarter
     if (chosenStarterId > STARTER_MON_COUNT)
         chosenStarterId = 0;
     return sStarterMon[chosenStarterId];

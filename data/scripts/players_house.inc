@@ -372,6 +372,9 @@ PlayersHouse_1F_EventScript_MomHeal::
 	return
 
 PlayersHouse_1F_EventScript_AskAboutEevee::
+	@ Check if player is Karrpy with Wailord starter - if so, skip trade dialogue
+	specialvar VAR_RESULT, CheckKarrpyWailordStarter
+	goto_if_eq VAR_RESULT, TRUE, PlayersHouse_1F_EventScript_MomMenuWithEevee
 	msgbox PlayersHouse_1F_Text_WouldYouLikeEeveeSwap, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, NO, PlayersHouse_1F_EventScript_MomMenuWithEevee
 	special ChoosePartyMon
@@ -385,6 +388,8 @@ PlayersHouse_1F_EventScript_AskAboutEevee::
 	goto_if_eq VAR_RESULT, SPECIES_TREECKO, PlayersHouse_1F_EventScript_ValidStarter
 	goto_if_eq VAR_RESULT, SPECIES_TORCHIC, PlayersHouse_1F_EventScript_ValidStarter
 	goto_if_eq VAR_RESULT, SPECIES_MUDKIP, PlayersHouse_1F_EventScript_ValidStarter
+	@ Also check for Wailord (in case Karrpy has Wailord but function didn't catch it)
+	goto_if_eq VAR_RESULT, SPECIES_WAILORD, PlayersHouse_1F_EventScript_NotAStarter
 	goto PlayersHouse_1F_EventScript_NotAStarter
 	end
 
