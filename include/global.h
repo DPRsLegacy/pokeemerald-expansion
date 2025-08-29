@@ -582,7 +582,8 @@ struct SaveBlock2
              u16 optionsBattleSceneOff:1; // whether battle animations are disabled
              u16 regionMapZoom:1; // whether the map is zoomed in
              u16 randomizerEnabled:1; // whether randomizer mode is active
-             //u16 padding1:3;
+             u16 nuzlockeEnabled:1; // whether nuzlocke mode is active
+             //u16 padding1:2;
              //u16 padding2;
     /*0x18*/ struct Pokedex pokedex;
     /*0x90*/ u8 filler_90[0x8];
@@ -603,7 +604,8 @@ struct SaveBlock2
 #endif //FREE_RECORD_MIXING_HALL_RECORDS
     /*0x624*/ u16 contestLinkResults[CONTEST_CATEGORIES_COUNT][CONTESTANT_COUNT];
     /*0x64C*/ struct BattleFrontier frontier;
-}; // sizeof=0xF2C
+    /*0xF2C*/ u8 nuzlockeCaughtAreas[64]; // Bitfield tracking areas where Pokémon have been caught in Nuzlocke mode (64 bytes = 512 areas)
+}; // sizeof=0xF6C
 
 extern struct SaveBlock2 *gSaveBlock2Ptr;
 

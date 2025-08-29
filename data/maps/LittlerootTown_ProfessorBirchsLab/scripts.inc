@@ -527,6 +527,10 @@ LittlerootTown_ProfessorBirchsLab_EventScript_MayGivePokeBalls::
 	msgbox LittlerootTown_ProfessorBirchsLab_Text_MayGotPokedexTooTakeThese, MSGBOX_DEFAULT
 	giveitem ITEM_POKE_BALL, 5
 	call_if_eq VAR_RESULT, FALSE, LittlerootTown_ProfessorBirchsLab_EventScript_MayNoRoomForPokeBalls
+	msgbox LittlerootTown_ProfessorBirchsLab_Text_MayGiveTeraOrb, MSGBOX_DEFAULT
+	giveitem ITEM_TERA_ORB, 1
+	call_if_eq VAR_RESULT, FALSE, LittlerootTown_ProfessorBirchsLab_EventScript_MayNoRoomForTeraOrb
+	setflag FLAG_UNUSED_0x923
 	msgbox LittlerootTown_ProfessorBirchsLab_Text_CatchCutePokemonWithPokeBalls, MSGBOX_DEFAULT
 	setvar VAR_RESULT, 0
 	return
@@ -535,6 +539,10 @@ LittlerootTown_ProfessorBirchsLab_EventScript_BrendanGivePokeBalls::
 	msgbox LittlerootTown_ProfessorBirchsLab_Text_BrendanGotPokedexTooTakeThese, MSGBOX_DEFAULT
 	giveitem ITEM_POKE_BALL, 5
 	call_if_eq VAR_RESULT, FALSE, LittlerootTown_ProfessorBirchsLab_EventScript_BrendanNoRoomForPokeBalls
+	msgbox LittlerootTown_ProfessorBirchsLab_Text_BrendanGiveTeraOrb, MSGBOX_DEFAULT
+	giveitem ITEM_TERA_ORB, 1
+	call_if_eq VAR_RESULT, FALSE, LittlerootTown_ProfessorBirchsLab_EventScript_BrendanNoRoomForTeraOrb
+	setflag FLAG_UNUSED_0x923
 	msgbox LittlerootTown_ProfessorBirchsLab_Text_CatchCoolPokemonWithPokeBalls, MSGBOX_DEFAULT
 	setvar VAR_RESULT, 1
 	return
@@ -559,6 +567,14 @@ LittlerootTown_ProfessorBirchsLab_EventScript_MayNoRoomForPokeBalls::
 	return
 
 LittlerootTown_ProfessorBirchsLab_EventScript_BrendanNoRoomForPokeBalls::
+	msgbox LittlerootTown_ProfessorBirchsLab_Text_HeyYourBagsFull, MSGBOX_DEFAULT
+	return
+
+LittlerootTown_ProfessorBirchsLab_EventScript_MayNoRoomForTeraOrb::
+	msgbox LittlerootTown_ProfessorBirchsLab_Text_OhYourBagsFull, MSGBOX_DEFAULT
+	return
+
+LittlerootTown_ProfessorBirchsLab_EventScript_BrendanNoRoomForTeraOrb::
 	msgbox LittlerootTown_ProfessorBirchsLab_Text_HeyYourBagsFull, MSGBOX_DEFAULT
 	return
 
@@ -765,6 +781,18 @@ LittlerootTown_ProfessorBirchsLab_Text_MayGotPokedexTooTakeThese:
 	.string "That's great! Just like me!\n"
 	.string "I've got something for you, too!$"
 
+LittlerootTown_ProfessorBirchsLab_Text_MayGiveTeraOrb:
+	.string "MAY: Oh! And here's something really\n"
+	.string "special from my dad!\p"
+	.string "It's a TERA ORB! It uses a new\n"
+	.string "phenomenon discovered in PALDEA!\p"
+	.string "After researchers found TERAPAGOS,\n"
+	.string "this power spread to HOENN too!\p"
+	.string "To TERASTALLIZE, just press START\n"
+	.string "before picking a move in battle!\p"
+	.string "Your POKéMON will get a sparkling\n"
+	.string "crystal form and change types!$"
+
 LittlerootTown_ProfessorBirchsLab_Text_CatchCutePokemonWithPokeBalls:
 	.string "MAY: It's fun if you can get a lot of\n"
 	.string "POKéMON!\p"
@@ -785,6 +813,17 @@ LittlerootTown_ProfessorBirchsLab_Text_BrendanGotPokedexTooTakeThese:
 	.string "So you got a POKéDEX, too.\p"
 	.string "Well then, here.\n"
 	.string "I'll give you these.$"
+
+LittlerootTown_ProfessorBirchsLab_Text_BrendanGiveTeraOrb:
+	.string "BRENDAN: And here's a TERA ORB from\n"
+	.string "my old man.\p"
+	.string "It's based on new research from\n"
+	.string "PALDEA. They discovered TERAPAGOS\l"
+	.string "and now this power works in HOENN.\p"
+	.string "In battle, hit START before choosing\n"
+	.string "your move to activate it.\p"
+	.string "Your POKéMON will TERASTALLIZE and\n"
+	.string "change types. Use it strategically.$"
 
 LittlerootTown_ProfessorBirchsLab_Text_CatchCoolPokemonWithPokeBalls:
 	.string "BRENDAN: You know it's more fun to\n"

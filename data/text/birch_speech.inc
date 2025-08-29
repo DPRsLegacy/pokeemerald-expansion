@@ -68,6 +68,26 @@ gText_Birch_RandomizerDisabled::
 	.string "classic POKéMON adventure!\p"
 	.string "$"
 
+gText_Birch_NuzlockeQuestion::
+	.string "Now, would you like to enable\n"
+	.string "NUZLOCKE MODE?\p"
+	.string "This challenging mode enforces\n"
+	.string "special rules: Only one POKéMON\l"
+	.string "per area, all POKéMON must be\l"
+	.string "nicknamed, and fainted POKéMON\l"
+	.string "must be released!\p"
+	.string "Enable NUZLOCKE MODE?$"
+
+gText_Birch_NuzlockeEnabled::
+	.string "Brave choice! Your journey will be\n"
+	.string "an ultimate test of skill!\p"
+	.string "$"
+
+gText_Birch_NuzlockeDisabled::
+	.string "Understandable! You can still\n"
+	.string "enjoy a great adventure!\p"
+	.string "$"
+
 gText_Birch_AreYouReady::
 	.string "All right, are you ready?\p"
 	.string "Your very own adventure is about\n"

@@ -9,6 +9,7 @@
 #include "battle_pike.h"
 #include "battle_pyramid.h"
 #include "battle_setup.h"
+#include "constants/battle.h"
 #include "battle_tower.h"
 #include "battle_z_move.h"
 #include "data.h"
@@ -3331,9 +3332,97 @@ void CopyMon(void *dest, void *src, size_t size)
     memcpy(dest, src, size);
 }
 
+// Nuzlocke helper functions
+static bool8 IsNuzlockeAreaAlreadyCaught(u16 mapNum)
+{
+    if (!gSaveBlock2Ptr->nuzlockeEnabled)
+        return FALSE;
+        
+    // Check if this area has already had a Pokemon caught
+    u16 byteIndex = mapNum / 8;
+    u8 bitIndex = mapNum % 8;
+    
+    if (byteIndex >= sizeof(gSaveBlock2Ptr->nuzlockeCaughtAreas))
+        return FALSE;
+        
+    return (gSaveBlock2Ptr->nuzlockeCaughtAreas[byteIndex] & (1 << bitIndex)) != 0;
+}
+
+static void MarkNuzlockeAreaAsCaught(u16 mapNum)
+{
+    if (!gSaveBlock2Ptr->nuzlockeEnabled)
+        return;
+        
+    // Mark this area as having had a Pokemon caught
+    u16 byteIndex = mapNum / 8;
+    u8 bitIndex = mapNum % 8;
+    
+    if (byteIndex >= sizeof(gSaveBlock2Ptr->nuzlockeCaughtAreas))
+        return;
+        
+    gSaveBlock2Ptr->nuzlockeCaughtAreas[byteIndex] |= (1 << bitIndex);
+}
+
+// Nuzlocke function to release fainted Pokemon
+void CheckAndReleaseFaintedPokemonNuzlocke(void)
+{
+    s32 i, j;
+    
+    if (!gSaveBlock2Ptr->nuzlockeEnabled)
+        return;
+        
+    // Check each party slot for fainted Pokemon
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL) != SPECIES_NONE)
+        {
+            if (GetMonData(&gPlayerParty[i], MON_DATA_HP, NULL) == 0)
+            {
+                // Pokemon has fainted - release it in Nuzlocke mode
+                ZeroMonData(&gPlayerParty[i]);
+                
+                // Compact the party to remove empty slots
+                for (j = i; j < PARTY_SIZE - 1; j++)
+                {
+                    if (GetMonData(&gPlayerParty[j + 1], MON_DATA_SPECIES, NULL) != SPECIES_NONE)
+                    {
+                        gPlayerParty[j] = gPlayerParty[j + 1];
+                        ZeroMonData(&gPlayerParty[j + 1]);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                
+                // Decrease party count and check this slot again since we shifted
+                gPlayerPartyCount--;
+                i--; // Check this index again since we moved a mon here
+            }
+        }
+    }
+}
+
 u8 GiveMonToPlayer(struct Pokemon *mon)
 {
     s32 i;
+
+    // Nuzlocke rule: Only one Pokemon per area
+    if (gSaveBlock2Ptr->nuzlockeEnabled)
+    {
+        if (gBattleTypeFlags & BATTLE_TYPE_SAFARI)
+        {
+            // In Safari Zone, use different map tracking
+            if (IsNuzlockeAreaAlreadyCaught(gMapHeader.mapLayoutId + 1000))
+                return MON_CANT_GIVE; // Prevent catching if already caught in this Safari area
+        }
+        else if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
+        {
+            // For wild battles (no trainer), use current map
+            if (IsNuzlockeAreaAlreadyCaught(gMapHeader.mapLayoutId))
+                return MON_CANT_GIVE; // Prevent catching if already caught in this area
+        }
+    }
 
     SetMonData(mon, MON_DATA_OT_NAME, gSaveBlock2Ptr->playerName);
     SetMonData(mon, MON_DATA_OT_GENDER, &gSaveBlock2Ptr->playerGender);
@@ -3346,10 +3435,33 @@ u8 GiveMonToPlayer(struct Pokemon *mon)
     }
 
     if (i >= PARTY_SIZE)
-        return CopyMonToPC(mon);
+    {
+        u8 result = CopyMonToPC(mon);
+        
+        // Mark area as caught if successful
+        if (result == MON_GIVEN_TO_PC && gSaveBlock2Ptr->nuzlockeEnabled)
+        {
+            if (gBattleTypeFlags & BATTLE_TYPE_SAFARI)
+                MarkNuzlockeAreaAsCaught(gMapHeader.mapLayoutId + 1000);
+            else if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
+                MarkNuzlockeAreaAsCaught(gMapHeader.mapLayoutId);
+        }
+        
+        return result;
+    }
 
     CopyMon(&gPlayerParty[i], mon, sizeof(*mon));
     gPlayerPartyCount = i + 1;
+    
+    // Mark area as caught if successful and in Nuzlocke mode
+    if (gSaveBlock2Ptr->nuzlockeEnabled)
+    {
+        if (gBattleTypeFlags & BATTLE_TYPE_SAFARI)
+            MarkNuzlockeAreaAsCaught(gMapHeader.mapLayoutId + 1000);
+        else if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
+            MarkNuzlockeAreaAsCaught(gMapHeader.mapLayoutId);
+    }
+    
     return MON_GIVEN_TO_PARTY;
 }
 
@@ -7165,6 +7277,21 @@ bool32 IsSpeciesForeignRegionalForm(u32 species, u32 currentRegion)
 
 u32 GetTeraTypeFromPersonality(struct Pokemon *mon)
 {
+    // If randomizer mode is enabled, assign a random Tera type
+    if (gSaveBlock2Ptr->randomizerEnabled)
+    {
+        // Use personality for consistent seeding per individual Pokemon
+        u32 personality = GetMonData(mon, MON_DATA_PERSONALITY);
+        u32 species = GetMonData(mon, MON_DATA_SPECIES);
+        
+        // Seed with personality and species for consistency
+        SeedRng(personality + species);
+        
+        // Return random type (0 to 17, excluding TYPE_MYSTERY which is 18)
+        return Random() % (NUMBER_OF_MON_TYPES - 1);
+    }
+    
+    // Original behavior: choose between the Pokemon's two natural types
     const u8 *types = gSpeciesInfo[GetMonData(mon, MON_DATA_SPECIES)].types;
     return (GetMonData(mon, MON_DATA_PERSONALITY) & 0x1) == 0 ? types[0] : types[1];
 }

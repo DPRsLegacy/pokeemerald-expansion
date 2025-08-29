@@ -97,7 +97,8 @@ bool32 CanTerastallize(u32 battler)
         return FALSE;
 
     // Check if battler has another gimmick active.
-    if (GetActiveGimmick(battler) != GIMMICK_NONE)
+    // Allow Terastallization with Dynamax, but not with other gimmicks
+    if (GetActiveGimmick(battler) != GIMMICK_NONE && GetActiveGimmick(battler) != GIMMICK_DYNAMAX)
         return FALSE;
 
     // Check if battler is holding a Z-Crystal or Mega Stone.

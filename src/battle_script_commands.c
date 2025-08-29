@@ -15494,18 +15494,37 @@ static void Cmd_pickup(void)
                 }
                 else
                 {
-                    u32 rand = Random() % 100;
-                    u32 percentTotal = 0;
-
-                    for (j = 0; j < ARRAY_COUNT(sPickupTable); j++)
+                    u16 selectedItem;
+                    
+                    // If randomizer mode is enabled, give a random item from the pickup table
+                    if (gSaveBlock2Ptr->randomizerEnabled)
                     {
-                        percentTotal += sPickupTable[j].percentage[lvlDivBy10];
-                        if (rand < percentTotal)
+                        // Use a seed based on player's encryption key and the Pokémon's personality
+                        u32 personality = GetMonData(&gPlayerParty[i], MON_DATA_PERSONALITY);
+                        u32 seed = gSaveBlock2Ptr->encryptionKey + personality + gBattleResults.battleTurnCounter;
+                        SeedRng(seed);
+                        
+                        // Pick a random item from the entire pickup table regardless of level
+                        u32 randomIndex = Random() % ARRAY_COUNT(sPickupTable);
+                        selectedItem = sPickupTable[randomIndex].itemId;
+                    }
+                    else
+                    {
+                        u32 rand = Random() % 100;
+                        u32 percentTotal = 0;
+
+                        for (j = 0; j < ARRAY_COUNT(sPickupTable); j++)
                         {
-                            SetMonData(&gPlayerParty[i], MON_DATA_HELD_ITEM, &sPickupTable[j].itemId);
-                            break;
+                            percentTotal += sPickupTable[j].percentage[lvlDivBy10];
+                            if (rand < percentTotal)
+                            {
+                                selectedItem = sPickupTable[j].itemId;
+                                break;
+                            }
                         }
                     }
+                    
+                    SetMonData(&gPlayerParty[i], MON_DATA_HELD_ITEM, &selectedItem);
                 }
             }
             else if (ability == ABILITY_HONEY_GATHER
@@ -16402,11 +16421,20 @@ static void Cmd_trygivecaughtmonnick(void)
     switch (gBattleCommunication[MULTIUSE_STATE])
     {
     case 0:
-        HandleBattleWindow(YESNOBOX_X_Y, 0);
-        BattlePutTextOnWindow(gText_BattleYesNoChoice, B_WIN_YESNO);
-        gBattleCommunication[MULTIUSE_STATE]++;
-        gBattleCommunication[CURSOR_POSITION] = 0;
-        BattleCreateYesNoCursorAt(0);
+        // In Nuzlocke mode, force nickname (skip yes/no choice)
+        if (gSaveBlock2Ptr->nuzlockeEnabled)
+        {
+            gBattleCommunication[MULTIUSE_STATE] = 2; // Skip to naming screen
+            BeginFastPaletteFade(3);
+        }
+        else
+        {
+            HandleBattleWindow(YESNOBOX_X_Y, 0);
+            BattlePutTextOnWindow(gText_BattleYesNoChoice, B_WIN_YESNO);
+            gBattleCommunication[MULTIUSE_STATE]++;
+            gBattleCommunication[CURSOR_POSITION] = 0;
+            BattleCreateYesNoCursorAt(0);
+        }
         break;
     case 1:
         if (JOY_NEW(DPAD_UP) && gBattleCommunication[CURSOR_POSITION] != 0)

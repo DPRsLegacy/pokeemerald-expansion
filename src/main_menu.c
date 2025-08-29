@@ -235,6 +235,10 @@ static void Task_NewGameBirchSpeech_RandomizerQuestion(u8);
 static void Task_NewGameBirchSpeech_CreateRandomizerYesNo(u8);
 static void Task_NewGameBirchSpeech_ProcessRandomizerYesNoMenu(u8);
 static void Task_NewGameBirchSpeech_RandomizerResult(u8);
+static void Task_NewGameBirchSpeech_NuzlockeQuestion(u8);
+static void Task_NewGameBirchSpeech_CreateNuzlockeYesNo(u8);
+static void Task_NewGameBirchSpeech_ProcessNuzlockeYesNoMenu(u8);
+static void Task_NewGameBirchSpeech_NuzlockeResult(u8);
 static void Task_NewGameBirchSpeech_AreYouReady(u8);
 static void Task_NewGameBirchSpeech_ShrinkPlayer(u8);
 static void SpriteCB_MovePlayerDownWhileShrinking(struct Sprite *);
@@ -1789,6 +1793,59 @@ static void Task_NewGameBirchSpeech_ProcessRandomizerYesNoMenu(u8 taskId)
 }
 
 static void Task_NewGameBirchSpeech_RandomizerResult(u8 taskId)
+{
+    if (!RunTextPrintersAndIsPrinter0Active())
+    {
+        gTasks[taskId].tTimer = 64;
+        gTasks[taskId].func = Task_NewGameBirchSpeech_NuzlockeQuestion;
+    }
+}
+
+static void Task_NewGameBirchSpeech_NuzlockeQuestion(u8 taskId)
+{
+    if (gTasks[taskId].tTimer)
+    {
+        gTasks[taskId].tTimer--;
+        return;
+    }
+    
+    StringExpandPlaceholders(gStringVar4, gText_Birch_NuzlockeQuestion);
+    AddTextPrinterForMessage(TRUE);
+    gTasks[taskId].func = Task_NewGameBirchSpeech_CreateNuzlockeYesNo;
+}
+
+static void Task_NewGameBirchSpeech_CreateNuzlockeYesNo(u8 taskId)
+{
+    if (!RunTextPrintersAndIsPrinter0Active())
+    {
+        CreateYesNoMenuParameterized(2, 1, 0xF3, 0xDF, 2, 15);
+        gTasks[taskId].func = Task_NewGameBirchSpeech_ProcessNuzlockeYesNoMenu;
+    }
+}
+
+static void Task_NewGameBirchSpeech_ProcessNuzlockeYesNoMenu(u8 taskId)
+{
+    switch (Menu_ProcessInputNoWrapClearOnChoose())
+    {
+        case 0: // YES - Enable Nuzlocke
+            PlaySE(SE_SELECT);
+            gSaveBlock2Ptr->nuzlockeEnabled = TRUE;
+            StringExpandPlaceholders(gStringVar4, gText_Birch_NuzlockeEnabled);
+            AddTextPrinterForMessage(TRUE);
+            gTasks[taskId].func = Task_NewGameBirchSpeech_NuzlockeResult;
+            break;
+        case MENU_B_PRESSED:
+        case 1: // NO - Disable Nuzlocke
+            PlaySE(SE_SELECT);
+            gSaveBlock2Ptr->nuzlockeEnabled = FALSE;
+            StringExpandPlaceholders(gStringVar4, gText_Birch_NuzlockeDisabled);
+            AddTextPrinterForMessage(TRUE);
+            gTasks[taskId].func = Task_NewGameBirchSpeech_NuzlockeResult;
+            break;
+    }
+}
+
+static void Task_NewGameBirchSpeech_NuzlockeResult(u8 taskId)
 {
     if (!RunTextPrintersAndIsPrinter0Active())
     {
