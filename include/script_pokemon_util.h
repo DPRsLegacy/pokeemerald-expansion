@@ -13,5 +13,6 @@ void Script_GetChosenMonDefensiveEVs(void);
 void Script_GetChosenMonOffensiveIVs(void);
 void Script_GetChosenMonDefensiveIVs(void);
 void CheckKarrpyWailordStarter(void);
+void CheckIfSelectedMonIsFirstPartyMon(void);
 
 #endif // GUARD_SCRIPT_POKEMON_UTIL_H

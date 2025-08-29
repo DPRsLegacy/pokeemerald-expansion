@@ -384,13 +384,8 @@ PlayersHouse_1F_EventScript_AskAboutEevee::
 	copyvar VAR_0x8005, VAR_0x800A
 	specialvar VAR_RESULT, GetTradeSpecies
 	copyvar VAR_0x800B, VAR_RESULT
-	@ Check if selected Pokemon is any of the three starters
-	goto_if_eq VAR_RESULT, SPECIES_TREECKO, PlayersHouse_1F_EventScript_ValidStarter
-	goto_if_eq VAR_RESULT, SPECIES_TORCHIC, PlayersHouse_1F_EventScript_ValidStarter
-	goto_if_eq VAR_RESULT, SPECIES_MUDKIP, PlayersHouse_1F_EventScript_ValidStarter
-	@ Also check for Wailord (in case Karrpy has Wailord but function didn't catch it)
-	goto_if_eq VAR_RESULT, SPECIES_WAILORD, PlayersHouse_1F_EventScript_NotAStarter
-	goto PlayersHouse_1F_EventScript_NotAStarter
+	@ Allow any Pokemon to be traded (for randomizer compatibility)
+	goto PlayersHouse_1F_EventScript_ValidStarter
 	end
 
 PlayersHouse_1F_EventScript_ValidStarter::

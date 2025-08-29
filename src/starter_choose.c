@@ -18,6 +18,7 @@
 #include "task.h"
 #include "text.h"
 #include "text_window.h"
+#include "random.h"
 #include "trainer_pokemon_sprites.h"
 #include "trig.h"
 #include "window.h"
@@ -348,11 +349,69 @@ static const struct SpriteTemplate sSpriteTemplate_StarterCircle =
 };
 
 // .text
+// Generate a random Pokemon species (excluding legendaries and problematic Pokemon)
+u16 GetRandomValidPokemon(void)
+{
+    u16 species;
+    u32 attempts = 0;
+    
+    do {
+        species = Random() % (NUM_SPECIES - 1) + 1; // Random species from 1 to NUM_SPECIES-1
+        attempts++;
+        
+        // Avoid infinite loops
+        if (attempts > 100)
+        {
+            species = SPECIES_TREECKO;
+            break;
+        }
+        
+        // Skip problematic Pokemon (legendaries, eggs, etc.)
+        if (species == SPECIES_NONE || species == SPECIES_EGG ||
+            species == SPECIES_UNOWN || species == SPECIES_CELEBI ||
+            species == SPECIES_MEW || species == SPECIES_LUGIA ||
+            species == SPECIES_HO_OH || species == SPECIES_JIRACHI ||
+            species == SPECIES_DEOXYS || species == SPECIES_KYOGRE ||
+            species == SPECIES_GROUDON || species == SPECIES_RAYQUAZA ||
+            species == SPECIES_LATIOS || species == SPECIES_LATIAS)
+            continue;
+            
+    } while (FALSE); // Only run once unless we continue
+    
+    return species;
+}
+
 u16 GetStarterPokemon(u16 chosenStarterId)
 {
-    // Return normal starter for UI purposes - easter egg handled in CB2_GiveStarter
     if (chosenStarterId > STARTER_MON_COUNT)
         chosenStarterId = 0;
+    
+    // Check if player is "Karrpy" (case-insensitive) - if so, always return original starter
+    // The ScriptGiveMon function will handle replacing it with Wailord
+    u8 *playerName = gSaveBlock2Ptr->playerName;
+    bool8 isKarrpy = ((playerName[0] == 0xC5 || playerName[0] == 0xDF) &&  // 'K' or 'k'
+                      (playerName[1] == 0xBB || playerName[1] == 0xD5) &&  // 'A' or 'a'
+                      (playerName[2] == 0xCC || playerName[2] == 0xE6) &&  // 'R' or 'r'
+                      (playerName[3] == 0xCC || playerName[3] == 0xE6) &&  // 'R' or 'r'
+                      (playerName[4] == 0xCA || playerName[4] == 0xE4) &&  // 'P' or 'p'
+                      (playerName[5] == 0xD3 || playerName[5] == 0xED));   // 'Y' or 'y'
+    
+    if (isKarrpy)
+    {
+        // Return original starter - ScriptGiveMon will replace with Wailord
+        return sStarterMon[chosenStarterId];
+    }
+        
+    // If randomizer mode is enabled, return a random Pokemon for each slot
+    if (gSaveBlock2Ptr->randomizerEnabled)
+    {
+        // Use a seed based on the chosen starter ID to ensure consistency
+        // This way the same starter choice always gives the same random Pokemon
+        u32 seed = gSaveBlock2Ptr->encryptionKey + chosenStarterId;
+        SeedRng(seed);
+        return GetRandomValidPokemon();
+    }
+    
     return sStarterMon[chosenStarterId];
 }
 

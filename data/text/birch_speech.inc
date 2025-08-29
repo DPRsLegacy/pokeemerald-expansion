@@ -49,6 +49,25 @@ gText_Birch_YourePlayer::
 	.string "I get it now!\p"
 	.string "$"
 
+gText_Birch_RandomizerQuestion::
+	.string "Oh, one more thing!\p"
+	.string "Would you like to enable\n"
+	.string "RANDOMIZER MODE?\p"
+	.string "This will randomize all POKéMON\n"
+	.string "encounters and starter choices\l"
+	.string "for a unique adventure!\p"
+	.string "Enable RANDOMIZER MODE?$"
+
+gText_Birch_RandomizerEnabled::
+	.string "Excellent! Your adventure will be\n"
+	.string "full of surprises!\p"
+	.string "$"
+
+gText_Birch_RandomizerDisabled::
+	.string "No problem! You'll experience the\n"
+	.string "classic POKéMON adventure!\p"
+	.string "$"
+
 gText_Birch_AreYouReady::
 	.string "All right, are you ready?\p"
 	.string "Your very own adventure is about\n"
