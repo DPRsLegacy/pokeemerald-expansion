@@ -785,7 +785,9 @@ struct BattleStruct
     u8 trainerSlideSpriteIds[MAX_BATTLERS_COUNT];
     u16 opponentMonCanTera:6;
     u16 opponentMonCanDynamax:6;
-    u16 padding:4;
+    u16 padding:2;
+    bool8 teraUsedInBattle:1;
+    bool8 padding3:1;
 };
 
 struct AiBattleData

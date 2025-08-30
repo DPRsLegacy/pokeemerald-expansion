@@ -51,6 +51,7 @@
 #include "constants/songs.h"
 #include "constants/map_types.h"
 #include "constants/trainers.h"
+#include "difficulty.h"
 #include "constants/trainer_hill.h"
 #include "constants/weather.h"
 #include "wild_encounter.h"
@@ -1184,6 +1185,16 @@ void ClearTrainerFlag(u16 trainerId)
 
 void BattleSetup_StartTrainerBattle(void)
 {
+    // Enable enhanced difficulty for major battles
+    if (IsMajorBattle(TRAINER_BATTLE_PARAM.opponentA))
+    {
+        EnableEnhancedDifficultyForBattle(TRAINER_BATTLE_PARAM.opponentA);
+        
+        // Initialize Terastallization usage tracking for the new battle
+        if (gBattleStruct)
+            gBattleStruct->teraUsedInBattle = FALSE;
+    }
+    
     if (gNoOfApproachingTrainers == 2)
     {
         if (FollowerNPCIsBattlePartner())

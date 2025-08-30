@@ -75,6 +75,7 @@
 #include "constants/songs.h"
 #include "constants/trainer_slide.h"
 #include "constants/trainers.h"
+#include "difficulty.h"
 #include "constants/weather.h"
 #include "cable_club.h"
 
@@ -2007,11 +2008,102 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 speciesForTrainer = partyData[monIndex].species;
             }
             
-            CreateMon(&party[i], speciesForTrainer, partyData[monIndex].lvl, 0, TRUE, personalityValue, otIdType, fixedOtId);
-            SetMonData(&party[i], MON_DATA_HELD_ITEM, &partyData[monIndex].heldItem);
+            // Apply enhanced difficulty scaling for major battles
+            u8 enhancedLevel = partyData[monIndex].lvl;
+            u32 enhancedIVs = partyData[monIndex].iv;
+            const u16* enhancedItems = NULL;
+            
+            if (IsMajorBattle(trainer->trainerClass))
+            {
+                enum DifficultyScaling scaling = GetCurrentDifficultyScaling();
+                enhancedLevel = GetEnhancedTrainerMonLevel(partyData[monIndex].lvl, scaling);
+                enhancedIVs = GetEnhancedTrainerMonIVs(partyData[monIndex].iv, scaling);
+                enhancedItems = GetEnhancedTrainerItems(trainer->trainerClass, scaling);
+                
+                // Set up Terastallization and Dynamax based on difficulty scaling
+                if (ShouldTrainerUseTerastallization(trainer->trainerClass, scaling))
+                {
+                    // For gym leaders, check if Terastallization has already been used in this battle
+                    if (trainer->trainerClass == TRAINER_CLASS_LEADER)
+                    {
+                        // Check if this is the ace Pokémon (last in party) and Terastallization hasn't been used yet
+                        bool8 isAcePokemon = (i == monsCount - 1);
+                        
+                        if (isAcePokemon && !HasTerastallizationBeenUsedInBattle())
+                        {
+                            gBattleStruct->opponentMonCanTera |= 1 << i;
+                            // Set a random Tera type if none specified
+                            if (partyData[monIndex].teraType == 0)
+                            {
+                                u32 teraType = (Random() % 18) + 1; // Random type 1-18
+                                SetMonData(&party[i], MON_DATA_TERA_TYPE, &teraType);
+                            }
+                            // Mark Terastallization as used in this battle
+                            MarkTerastallizationAsUsedInBattle();
+                        }
+                    }
+                    else
+                    {
+                        // For non-gym leaders (Elite Four, Champion, main story), all Pokémon can Terastallize
+                        gBattleStruct->opponentMonCanTera |= 1 << i;
+                        // Set a random Tera type if none specified
+                        if (partyData[monIndex].teraType == 0)
+                        {
+                            u32 teraType = (Random() % 18) + 1; // Random type 1-18
+                            SetMonData(&party[i], MON_DATA_TERA_TYPE, &teraType);
+                        }
+                    }
+                }
+                
+                if (ShouldTrainerUseDynamax(trainer->trainerClass, scaling))
+                {
+                    // For gym leaders, Elite Four, and Champion, only use Dynamax on ace Pokémon
+                    if (trainer->trainerClass == TRAINER_CLASS_LEADER || 
+                        trainer->trainerClass == TRAINER_CLASS_ELITE_FOUR ||
+                        trainer->trainerClass == TRAINER_CLASS_CHAMPION)
+                    {
+                        // Check if this is the ace Pokémon (last in party)
+                        bool8 isAcePokemon = (i == monsCount - 1);
+                        
+                        if (isAcePokemon)
+                        {
+                            gBattleStruct->opponentMonCanDynamax |= 1 << i;
+                            // Set Dynamax level if none specified
+                            if (partyData[monIndex].dynamaxLevel == 0)
+                            {
+                                u32 dynamaxLevel = 10; // Maximum Dynamax level
+                                SetMonData(&party[i], MON_DATA_DYNAMAX_LEVEL, &dynamaxLevel);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // For other trainers that can use Dynamax, all Pokémon can use it
+                        gBattleStruct->opponentMonCanDynamax |= 1 << i;
+                        // Set Dynamax level if none specified
+                        if (partyData[monIndex].dynamaxLevel == 0)
+                        {
+                            u32 dynamaxLevel = 10; // Maximum Dynamax level
+                            SetMonData(&party[i], MON_DATA_DYNAMAX_LEVEL, &dynamaxLevel);
+                        }
+                    }
+                }
+            }
+            
+            CreateMon(&party[i], speciesForTrainer, enhancedLevel, 0, TRUE, personalityValue, otIdType, fixedOtId);
+            
+            // Use enhanced items if available, otherwise fall back to base items
+            if (enhancedItems != NULL)
+            {
+                SetMonData(&party[i], MON_DATA_HELD_ITEM, &enhancedItems[i % MAX_TRAINER_ITEMS]);
+            }
+            else
+            {
+                SetMonData(&party[i], MON_DATA_HELD_ITEM, &partyData[monIndex].heldItem);
+            }
 
             CustomTrainerPartyAssignMoves(&party[i], &partyData[monIndex]);
-            SetMonData(&party[i], MON_DATA_IVS, &(partyData[monIndex].iv));
+            SetMonData(&party[i], MON_DATA_IVS, &enhancedIVs);
             if (partyData[monIndex].ev != NULL)
             {
                 SetMonData(&party[i], MON_DATA_HP_EV, &(partyData[monIndex].ev[0]));
