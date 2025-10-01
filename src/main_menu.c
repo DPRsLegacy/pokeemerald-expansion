@@ -11,6 +11,7 @@
 #include "gpu_regs.h"
 #include "graphics.h"
 #include "international_string_util.h"
+#include "item.h"
 #include "link.h"
 #include "main.h"
 #include "main_menu.h"
@@ -231,14 +232,11 @@ void CreateYesNoMenuParameterized(u8, u8, u16, u16, u8, u8);
 static void Task_NewGameBirchSpeech_SlidePlatformAway2(u8);
 static void Task_NewGameBirchSpeech_ReshowBirchLotad(u8);
 static void Task_NewGameBirchSpeech_WaitForSpriteFadeInAndTextPrinter(u8);
-static void Task_NewGameBirchSpeech_RandomizerQuestion(u8);
-static void Task_NewGameBirchSpeech_CreateRandomizerYesNo(u8);
-static void Task_NewGameBirchSpeech_ProcessRandomizerYesNoMenu(u8);
-static void Task_NewGameBirchSpeech_RandomizerResult(u8);
-static void Task_NewGameBirchSpeech_NuzlockeQuestion(u8);
-static void Task_NewGameBirchSpeech_CreateNuzlockeYesNo(u8);
-static void Task_NewGameBirchSpeech_ProcessNuzlockeYesNoMenu(u8);
-static void Task_NewGameBirchSpeech_NuzlockeResult(u8);
+static void Task_NewGameBirchSpeech_GameModeMenu(u8);
+static void Task_NewGameBirchSpeech_ShowGameModeMenu(u8);
+static void Task_NewGameBirchSpeech_ProcessGameModeMenu(u8);
+static void DrawGameModeSelectionMenu(u8);
+static void Task_NewGameBirchSpeech_StartGame(u8);
 static void Task_NewGameBirchSpeech_AreYouReady(u8);
 static void Task_NewGameBirchSpeech_ShrinkPlayer(u8);
 static void SpriteCB_MovePlayerDownWhileShrinking(struct Sprite *);
@@ -1722,12 +1720,12 @@ static void Task_NewGameBirchSpeech_WaitForSpriteFadeInAndTextPrinter(u8 taskId)
             NewGameBirchSpeech_StartFadeOutTarget1InTarget2(taskId, 2);
             NewGameBirchSpeech_StartFadePlatformIn(taskId, 1);
             gTasks[taskId].tTimer = 64;
-            gTasks[taskId].func = Task_NewGameBirchSpeech_RandomizerQuestion;
+            gTasks[taskId].func = Task_NewGameBirchSpeech_GameModeMenu;
         }
     }
 }
 
-static void Task_NewGameBirchSpeech_RandomizerQuestion(u8 taskId)
+static void Task_NewGameBirchSpeech_GameModeMenu(u8 taskId)
 {
     u8 spriteId;
 
@@ -1751,106 +1749,137 @@ static void Task_NewGameBirchSpeech_RandomizerQuestion(u8 taskId)
         gTasks[taskId].tPlayerSpriteId = spriteId;
         NewGameBirchSpeech_StartFadeInTarget1OutTarget2(taskId, 2);
         NewGameBirchSpeech_StartFadePlatformOut(taskId, 1);
-        StringExpandPlaceholders(gStringVar4, gText_Birch_RandomizerQuestion);
+        StringExpandPlaceholders(gStringVar4, gText_Birch_GameModeQuestion);
         AddTextPrinterForMessage(TRUE);
-        gTasks[taskId].func = Task_NewGameBirchSpeech_CreateRandomizerYesNo;
+        // Initialize game modes to OFF
+        gSaveBlock2Ptr->randomizerEnabled = FALSE;
+        gSaveBlock2Ptr->nuzlockeEnabled = FALSE;
+        gTasks[taskId].data[13] = 0; // Current menu selection (0=Randomizer, 1=Nuzlocke, 2=Start Game)
+        gTasks[taskId].func = Task_NewGameBirchSpeech_ShowGameModeMenu;
     }
 }
 
-static void Task_NewGameBirchSpeech_CreateRandomizerYesNo(u8 taskId)
+static void Task_NewGameBirchSpeech_ShowGameModeMenu(u8 taskId)
 {
     if (gTasks[taskId].tIsDoneFadingSprites)
     {
         gSprites[gTasks[taskId].tPlayerSpriteId].oam.objMode = ST_OAM_OBJ_NORMAL;
         if (!RunTextPrintersAndIsPrinter0Active())
         {
-            CreateYesNoMenuParameterized(2, 1, 0xF3, 0xDF, 2, 15);
-            gTasks[taskId].func = Task_NewGameBirchSpeech_ProcessRandomizerYesNoMenu;
+            // Print the game mode options menu
+            NewGameBirchSpeech_ClearWindow(0);
+            DrawGameModeSelectionMenu(taskId);
+            gTasks[taskId].func = Task_NewGameBirchSpeech_ProcessGameModeMenu;
         }
     }
 }
 
-static void Task_NewGameBirchSpeech_ProcessRandomizerYesNoMenu(u8 taskId)
+static void DrawGameModeSelectionMenu(u8 taskId)
 {
-    switch (Menu_ProcessInputNoWrapClearOnChoose())
-    {
-        case 0: // YES - Enable randomizer
-            PlaySE(SE_SELECT);
-            gSaveBlock2Ptr->randomizerEnabled = TRUE;
-            StringExpandPlaceholders(gStringVar4, gText_Birch_RandomizerEnabled);
-            AddTextPrinterForMessage(TRUE);
-            gTasks[taskId].func = Task_NewGameBirchSpeech_RandomizerResult;
-            break;
-        case MENU_B_PRESSED:
-        case 1: // NO - Disable randomizer
-            PlaySE(SE_SELECT);
-            gSaveBlock2Ptr->randomizerEnabled = FALSE;
-            StringExpandPlaceholders(gStringVar4, gText_Birch_RandomizerDisabled);
-            AddTextPrinterForMessage(TRUE);
-            gTasks[taskId].func = Task_NewGameBirchSpeech_RandomizerResult;
-            break;
-    }
-}
-
-static void Task_NewGameBirchSpeech_RandomizerResult(u8 taskId)
-{
-    if (!RunTextPrintersAndIsPrinter0Active())
-    {
-        gTasks[taskId].tTimer = 64;
-        gTasks[taskId].func = Task_NewGameBirchSpeech_NuzlockeQuestion;
-    }
-}
-
-static void Task_NewGameBirchSpeech_NuzlockeQuestion(u8 taskId)
-{
-    if (gTasks[taskId].tTimer)
-    {
-        gTasks[taskId].tTimer--;
-        return;
-    }
+    u8 selection = gTasks[taskId].data[13];
+    const u8 *randomizerText = gSaveBlock2Ptr->randomizerEnabled ? gText_Birch_On : gText_Birch_Off;
+    const u8 *nuzlockeText = gSaveBlock2Ptr->nuzlockeEnabled ? gText_Birch_On : gText_Birch_Off;
     
-    StringExpandPlaceholders(gStringVar4, gText_Birch_NuzlockeQuestion);
-    AddTextPrinterForMessage(TRUE);
-    gTasks[taskId].func = Task_NewGameBirchSpeech_CreateNuzlockeYesNo;
+    // Clear previous text
+    FillWindowPixelBuffer(0, PIXEL_FILL(1));
+    
+    // Draw menu items
+    AddTextPrinterParameterized(0, FONT_NORMAL, gText_Birch_Randomizer, 8, 1, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(0, FONT_NORMAL, randomizerText, 168, 1, TEXT_SKIP_DRAW, NULL);
+    
+    AddTextPrinterParameterized(0, FONT_NORMAL, gText_Birch_Nuzlocke, 8, 17, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(0, FONT_NORMAL, nuzlockeText, 168, 17, TEXT_SKIP_DRAW, NULL);
+    
+    AddTextPrinterParameterized(0, FONT_NORMAL, gText_Birch_StartGame, 8, 33, TEXT_SKIP_DRAW, NULL);
+    
+    // Draw cursor
+    AddTextPrinterParameterized(0, FONT_NORMAL, gText_SelectorArrow2, 0, 1 + (selection * 16), TEXT_SKIP_DRAW, NULL);
+    
+    CopyWindowToVram(0, COPYWIN_GFX);
 }
 
-static void Task_NewGameBirchSpeech_CreateNuzlockeYesNo(u8 taskId)
+static void Task_NewGameBirchSpeech_ProcessGameModeMenu(u8 taskId)
 {
-    if (!RunTextPrintersAndIsPrinter0Active())
+    s16 *selection = &gTasks[taskId].data[13];
+    
+    if (JOY_NEW(DPAD_UP))
     {
-        CreateYesNoMenuParameterized(2, 1, 0xF3, 0xDF, 2, 15);
-        gTasks[taskId].func = Task_NewGameBirchSpeech_ProcessNuzlockeYesNoMenu;
+        PlaySE(SE_SELECT);
+        if (*selection > 0)
+            (*selection)--;
+        else
+            *selection = 2; // Wrap to bottom
+        DrawGameModeSelectionMenu(taskId);
     }
-}
-
-static void Task_NewGameBirchSpeech_ProcessNuzlockeYesNoMenu(u8 taskId)
-{
-    switch (Menu_ProcessInputNoWrapClearOnChoose())
+    else if (JOY_NEW(DPAD_DOWN))
     {
-        case 0: // YES - Enable Nuzlocke
+        PlaySE(SE_SELECT);
+        if (*selection < 2)
+            (*selection)++;
+        else
+            *selection = 0; // Wrap to top
+        DrawGameModeSelectionMenu(taskId);
+    }
+    else if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
+    {
+        // Toggle option on/off
+        PlaySE(SE_SELECT);
+        if (*selection == 0) // Randomizer
+        {
+            gSaveBlock2Ptr->randomizerEnabled = !gSaveBlock2Ptr->randomizerEnabled;
+        }
+        else if (*selection == 1) // Nuzlocke
+        {
+            gSaveBlock2Ptr->nuzlockeEnabled = !gSaveBlock2Ptr->nuzlockeEnabled;
+        }
+        else if (*selection == 2) // Start Game - pressing left/right on this also starts the game
+        {
             PlaySE(SE_SELECT);
-            gSaveBlock2Ptr->nuzlockeEnabled = TRUE;
-            StringExpandPlaceholders(gStringVar4, gText_Birch_NuzlockeEnabled);
-            AddTextPrinterForMessage(TRUE);
-            gTasks[taskId].func = Task_NewGameBirchSpeech_NuzlockeResult;
-            break;
-        case MENU_B_PRESSED:
-        case 1: // NO - Disable Nuzlocke
+            NewGameBirchSpeech_ClearWindow(0);
+            Task_NewGameBirchSpeech_StartGame(taskId);
+            return;
+        }
+        DrawGameModeSelectionMenu(taskId);
+    }
+    else if (JOY_NEW(A_BUTTON))
+    {
+        if (*selection == 2) // Start Game
+        {
             PlaySE(SE_SELECT);
-            gSaveBlock2Ptr->nuzlockeEnabled = FALSE;
-            StringExpandPlaceholders(gStringVar4, gText_Birch_NuzlockeDisabled);
-            AddTextPrinterForMessage(TRUE);
-            gTasks[taskId].func = Task_NewGameBirchSpeech_NuzlockeResult;
-            break;
+            NewGameBirchSpeech_ClearWindow(0);
+            Task_NewGameBirchSpeech_StartGame(taskId);
+        }
+        else
+        {
+            // Toggle option when A is pressed on it
+            PlaySE(SE_SELECT);
+            if (*selection == 0)
+                gSaveBlock2Ptr->randomizerEnabled = !gSaveBlock2Ptr->randomizerEnabled;
+            else if (*selection == 1)
+                gSaveBlock2Ptr->nuzlockeEnabled = !gSaveBlock2Ptr->nuzlockeEnabled;
+            DrawGameModeSelectionMenu(taskId);
+        }
+    }
+    else if (JOY_NEW(START_BUTTON))
+    {
+        // START button always starts the game from any menu position
+        PlaySE(SE_SELECT);
+        NewGameBirchSpeech_ClearWindow(0);
+        Task_NewGameBirchSpeech_StartGame(taskId);
+    }
+    else if (JOY_NEW(B_BUTTON))
+    {
+        // B button also starts the game (with default settings)
+        PlaySE(SE_SELECT);
+        NewGameBirchSpeech_ClearWindow(0);
+        Task_NewGameBirchSpeech_StartGame(taskId);
     }
 }
 
-static void Task_NewGameBirchSpeech_NuzlockeResult(u8 taskId)
+static void Task_NewGameBirchSpeech_StartGame(u8 taskId)
 {
-    if (!RunTextPrintersAndIsPrinter0Active())
-    {
-        gTasks[taskId].func = Task_NewGameBirchSpeech_AreYouReady;
-    }
+    // Continue with the regular game start sequence
+    gTasks[taskId].func = Task_NewGameBirchSpeech_AreYouReady;
 }
 
 static void Task_NewGameBirchSpeech_AreYouReady(u8 taskId)

@@ -4755,6 +4755,29 @@ void ItemUseCB_Medicine(u8 taskId, TaskFunc task)
     u16 item = gSpecialVar_ItemId;
     bool8 canHeal, cannotUse;
     u32 oldStatus = GetMonData(mon, MON_DATA_STATUS);
+    
+    // Check if this is a revival item and if we're in nuzlocke mode
+    if (GetMonData(mon, MON_DATA_HP) == 0)
+    {
+        // Revival items
+        if (item == ITEM_REVIVAL_HERB || item == ITEM_REVIVE || 
+            item == ITEM_MAX_REVIVE || item == ITEM_SACRED_ASH)
+        {
+            // In nuzlocke mode, you can't revive fainted Pokémon
+            if (gSaveBlock2Ptr->nuzlockeEnabled)
+            {
+                gPartyMenuUseExitCallback = FALSE;
+                PlaySE(SE_SELECT);
+                DisplayPartyMenuMessage(gText_WontHaveEffect, TRUE);
+                ScheduleBgCopyTilemapToVram(2);
+                if (gPartyMenu.menuType == PARTY_MENU_TYPE_FIELD)
+                    gTasks[taskId].func = Task_ReturnToChooseMonAfterText;
+                else
+                    gTasks[taskId].func = task;
+                return;
+            }
+        }
+    }
 
     if (NotUsingHPEVItemOnShedinja(mon, item) == FALSE)
     {
@@ -5664,6 +5687,8 @@ static void UNUSED DisplayExpPoints(u8 taskId, TaskFunc task, u8 holdEffectParam
     gTasks[taskId].func = task;
 }
 
+#include "nuzlocke_candy.h"
+
 void ItemUseCB_RareCandy(u8 taskId, TaskFunc task)
 {
     struct Pokemon *mon = &gPlayerParty[gPartyMenu.slotId];
@@ -5672,6 +5697,16 @@ void ItemUseCB_RareCandy(u8 taskId, TaskFunc task)
     u16 *itemPtr = &gSpecialVar_ItemId;
     bool8 cannotUseEffect;
     u8 holdEffectParam = GetItemHoldEffectParam(*itemPtr);
+
+    // Check if we can use Rare Candy in Nuzlocke mode
+    if (!CanUseRareCandyInNuzlocke(mon))
+    {
+        gPartyMenuUseExitCallback = FALSE;
+        DisplayPartyMenuMessage(gText_WontHaveEffect, TRUE);
+        ScheduleBgCopyTilemapToVram(2);
+        gTasks[taskId].func = task;
+        return;
+    }
 
     sInitialLevel = GetMonData(mon, MON_DATA_LEVEL);
     if (!(B_RARE_CANDY_CAP && sInitialLevel >= GetCurrentLevelCap()))
@@ -6010,6 +6045,17 @@ void ItemUseCB_DynamaxCandy(u8 taskId, TaskFunc task)
 
 void ItemUseCB_SacredAsh(u8 taskId, TaskFunc task)
 {
+    // In nuzlocke mode, Sacred Ash doesn't work on fainted Pokémon
+    if (gSaveBlock2Ptr->nuzlockeEnabled)
+    {
+        gPartyMenuUseExitCallback = FALSE;
+        PlaySE(SE_SELECT);
+        DisplayPartyMenuMessage(gText_WontHaveEffect, TRUE);
+        ScheduleBgCopyTilemapToVram(2);
+        gTasks[taskId].func = task;
+        return;
+    }
+    
     sPartyMenuInternal->tUsedOnSlot = FALSE;
     sPartyMenuInternal->tHadEffect = FALSE;
     sPartyMenuInternal->tLastSlotUsed = gPartyMenu.slotId;

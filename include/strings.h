@@ -286,12 +286,12 @@ extern const u8 gText_Birch_BoyOrGirl[];
 extern const u8 gText_Birch_WhatsYourName[];
 extern const u8 gText_Birch_SoItsPlayer[];
 extern const u8 gText_Birch_YourePlayer[];
-extern const u8 gText_Birch_RandomizerQuestion[];
-extern const u8 gText_Birch_RandomizerEnabled[];
-extern const u8 gText_Birch_RandomizerDisabled[];
-extern const u8 gText_Birch_NuzlockeQuestion[];
-extern const u8 gText_Birch_NuzlockeEnabled[];
-extern const u8 gText_Birch_NuzlockeDisabled[];
+extern const u8 gText_Birch_GameModeQuestion[];
+extern const u8 gText_Birch_Randomizer[];
+extern const u8 gText_Birch_Nuzlocke[];
+extern const u8 gText_Birch_StartGame[];
+extern const u8 gText_Birch_On[];
+extern const u8 gText_Birch_Off[];
 extern const u8 gText_Birch_AreYouReady[];
 
 extern const u8 gText_BirchInTrouble[];

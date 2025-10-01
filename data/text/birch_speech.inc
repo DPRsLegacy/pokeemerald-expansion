@@ -49,44 +49,34 @@ gText_Birch_YourePlayer::
 	.string "I get it now!\p"
 	.string "$"
 
-gText_Birch_RandomizerQuestion::
+gText_Birch_GameModeQuestion::
 	.string "Oh, one more thing!\p"
-	.string "Would you like to enable\n"
-	.string "RANDOMIZER MODE?\p"
-	.string "This will randomize all POKéMON\n"
-	.string "encounters and starter choices\l"
-	.string "for a unique adventure!\p"
-	.string "Enable RANDOMIZER MODE?$"
-
-gText_Birch_RandomizerEnabled::
-	.string "Excellent! Your adventure will be\n"
-	.string "full of surprises!\p"
+	.string "You can customize your adventure\n"
+	.string "with special game modes!\p"
+	.string "Use the D-Pad to navigate,\n"
+	.string "LEFT/RIGHT or A to toggle options,\l"
+	.string "then select START GAME!\p"
+	.string "You can also press START or B\n"
+	.string "at any time to begin your journey!\p"
+	.string "SPECIAL BONUS: Enabling both modes\n"
+	.string "will add infinite RARE CANDIES to\l"
+	.string "your PC storage!\p"
 	.string "$"
 
-gText_Birch_RandomizerDisabled::
-	.string "No problem! You'll experience the\n"
-	.string "classic POKéMON adventure!\p"
-	.string "$"
+gText_Birch_Randomizer::
+	.string "RANDOMIZER$"
 
-gText_Birch_NuzlockeQuestion::
-	.string "Now, would you like to enable\n"
-	.string "NUZLOCKE MODE?\p"
-	.string "This challenging mode enforces\n"
-	.string "special rules: Only one POKéMON\l"
-	.string "per area, all POKéMON must be\l"
-	.string "nicknamed, and fainted POKéMON\l"
-	.string "must be released!\p"
-	.string "Enable NUZLOCKE MODE?$"
+gText_Birch_Nuzlocke::
+	.string "NUZLOCKE$"
 
-gText_Birch_NuzlockeEnabled::
-	.string "Brave choice! Your journey will be\n"
-	.string "an ultimate test of skill!\p"
-	.string "$"
+gText_Birch_StartGame::
+	.string "START GAME$"
 
-gText_Birch_NuzlockeDisabled::
-	.string "Understandable! You can still\n"
-	.string "enjoy a great adventure!\p"
-	.string "$"
+gText_Birch_On::
+	.string "ON$"
+
+gText_Birch_Off::
+	.string "OFF$"
 
 gText_Birch_AreYouReady::
 	.string "All right, are you ready?\p"
