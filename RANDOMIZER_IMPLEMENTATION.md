@@ -40,7 +40,61 @@ if (gSaveBlock2Ptr->randomizerEnabled)
 }
 ```
 
-### 4. Trainer Team Randomization ✓ (NEW)
+### 4. Hidden Item Randomization ✓ (NEW)
+**Files Modified:** 
+- `src/field_specials.c`
+- `src/random_items.c` (new file)
+- `include/random_items.h` (new file)
+**Function:** `SetHiddenItemFlag()`
+
+When randomizer mode is enabled:
+- All hidden items in the world are randomized when found
+- Uses seeded randomization based on the original item ID
+- Ensures items are always valid and usable (excludes key items, etc.)
+
+**Implementation Details:**
+```c
+// In SetHiddenItemFlag() function
+if (gSaveBlock2Ptr->randomizerEnabled)
+{
+    // Get the original item from gSpecialVar_0x8005
+    u16 originalItem = gSpecialVar_0x8005;
+    
+    // Replace with a random item
+    u16 randomItem = GetRandomValidItem(originalItem);
+    
+    // Update the item in gSpecialVar_0x8005
+    gSpecialVar_0x8005 = randomItem;
+}
+```
+
+**Random Item Selection:**
+```c
+// Get a random valid item for hidden item spots
+u16 GetRandomValidItem(u16 originalItem)
+{
+    u16 randomItem;
+    u32 attempts = 0;
+    
+    // Use a seeded RNG for consistent results
+    // The seed is based on the encryption key and the original item
+    u32 seed = gSaveBlock2Ptr->encryptionKey + originalItem;
+    SeedRng(seed);
+    
+    do {
+        randomItem = (Random() % (ITEMS_COUNT - 1)) + 1;
+        attempts++;
+        
+        // Avoid infinite loops
+        if (attempts > 100)
+            return originalItem;
+    } while (!IsValidRandomItem(randomItem));
+    
+    return randomItem;
+}
+```
+
+### 5. Trainer Team Randomization ✓ (NEW)
 **File Modified:** `src/battle_main.c`
 **Function:** `CreateNPCTrainerPartyFromTrainer()`
 
@@ -55,7 +109,7 @@ When randomizer mode is enabled:
   - Gym Leader rematches
   - All other trainer battles
 
-### 5. Trainer Moveset Randomization ✓ (NEW)
+### 6. Trainer Moveset Randomization ✓ (NEW)
 **File Modified:** `src/battle_main.c`
 **Function:** `CustomTrainerPartyAssignMoves()` and new `AssignRandomMovesToMon()`
 
@@ -116,13 +170,24 @@ The `GetRandomValidPokemon()` function (from `src/starter_choose.c`) is used to 
 - **Wild Pokémon**: `encryptionKey + originalSpecies + (mapGroup << 8) + mapNum`
 - **Trainers**: `encryptionKey + partySlot + originalSpecies`
 - **Pickup**: `encryptionKey + pokemonPersonality + battleTurnCounter`
+- **Hidden Items**: `encryptionKey + originalItem`
 
 ## Files Modified
 
 1. **src/battle_script_commands.c**
    - Added pickup item randomization logic in `Cmd_pickup()`
 
-2. **src/battle_main.c**
+2. **src/field_specials.c**
+   - Modified `SetHiddenItemFlag()` to randomize hidden items when found
+
+3. **src/random_items.c** (new file)
+   - Added `GetRandomValidItem()` function for randomizing items
+   - Added `IsValidRandomItem()` helper function to filter out key items and invalid items
+
+4. **include/random_items.h** (new file)
+   - Added header file for random item functions
+
+5. **src/battle_main.c**
    - Added `#include "starter_choose.h"` for `GetRandomValidPokemon()`
    - Modified `CreateNPCTrainerPartyFromTrainer()` to randomize trainer species
 
@@ -132,6 +197,7 @@ The `GetRandomValidPokemon()` function (from `src/starter_choose.c`) is used to 
 ✅ **Wild Pokémon** - Species (already implemented)  
 ✅ **Starter Pokémon** - Species (already implemented)  
 ✅ **Pickup Items** - All items from pickup table (NEW)  
+✅ **Hidden Items** - All hidden items found in the world (NEW)
 ✅ **All Trainer Pokémon Species** (NEW):
   - Regular trainers, Gym Leaders, Elite Four, Champion Wallace, Rematches
 ✅ **All Trainer Pokémon Movesets** (NEW):
@@ -168,6 +234,8 @@ The `GetRandomValidPokemon()` function (from `src/starter_choose.c`) is used to 
 - Existing save files without randomizer enabled are unaffected
 - Frontier trainers and special trainer types (SECRET_BASE, etc.) excluded from randomization
 - Battle Pike and Battle Pyramid pickup items remain unchanged (they have separate systems)
+- Hidden items are randomized when found, not when the game is started
+- Key items, HMs, TMs, and other important items are excluded from randomization
 - Nuzlocke mode can be enabled with or without randomizer mode
 - Area tracking supports up to 1024 different areas/routes
 - Fainted Pokémon are permanently lost in Nuzlocke mode (released automatically)

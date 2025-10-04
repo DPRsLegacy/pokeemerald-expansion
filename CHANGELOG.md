@@ -45,6 +45,7 @@ The gym battles, Elite Four, and Champion are now **significantly more challengi
 - Randomizes trainer Pokémon teams
 - Gives random movesets to all Pokémon
 - Randomizes pickup items
+- Randomizes hidden items found in the world
 - Adds random Tera types when enabled
 
 **How to use:**
@@ -131,6 +132,7 @@ The gym battles, Elite Four, and Champion are now **significantly more challengi
 ✅ **Memory-efficient battle tracking**  
 ✅ **Proper header organization**  
 ✅ **Enhanced maintainability**  
+✅ **Added hidden item randomization**  
 
 
 ## 🎯 **Player Experience**

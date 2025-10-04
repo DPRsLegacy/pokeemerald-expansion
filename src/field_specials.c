@@ -34,6 +34,7 @@
 #include "pokemon.h"
 #include "pokemon_storage_system.h"
 #include "random.h"
+#include "random_items.h"
 #include "rayquaza_scene.h"
 #include "region_map.h"
 #include "rtc.h"
@@ -955,6 +956,20 @@ void CableCarWarp(void)
 
 void SetHiddenItemFlag(void)
 {
+    // If randomizer mode is enabled, randomize the hidden item before setting the flag
+    if (gSaveBlock2Ptr->randomizerEnabled)
+    {
+        // Get the original item from gSpecialVar_0x8005
+        u16 originalItem = gSpecialVar_0x8005;
+        
+        // Replace with a random item
+        u16 randomItem = GetRandomValidItem(originalItem);
+        
+        // Update the item in gSpecialVar_0x8005
+        gSpecialVar_0x8005 = randomItem;
+    }
+    
+    // Set the flag to mark the hidden item as found
     FlagSet(gSpecialVar_0x8004);
 }
 

@@ -28,6 +28,11 @@ This document outlines the comprehensive randomizer and enhanced battle features
 - Random items from pickup table instead of level-based distribution
 - Uses player trainer ID + party slot for consistent seeding
 
+#### **Hidden Items**
+- All hidden items in the overworld are randomized when found
+- Uses encryption key + original item ID for consistent seeding
+- Excludes key items and important progression items
+
 #### **Tera Types** *(When Randomizer Enabled)*
 - All captured Pokémon get completely random Tera types (any of 18 types)
 - Personality + species based seeding for consistency per individual
@@ -70,6 +75,8 @@ This document outlines the comprehensive randomizer and enhanced battle features
 #### Core Randomizer Logic
 - `src/battle_main.c` - Trainer species and moveset randomization
 - `src/battle_script_commands.c` - Pickup item randomization and forced nicknames
+- `src/field_specials.c` - Hidden item randomization
+- `src/random_items.c` - Random item selection logic
 - `src/wild_encounter.c` - Wild Pokémon species randomization
 - `src/pokemon.c` - Tera type randomization and Nuzlocke rules
 - `src/party_menu.c` - Nuzlocke death checking
@@ -108,6 +115,8 @@ This document outlines the comprehensive randomizer and enhanced battle features
 - **Consistent**: Same seed produces same randomization across playthroughs
 - **Varied**: Different encryption keys create completely different experiences
 - **Balanced**: All Pokémon species have equal chance of appearing
+- **Dynamic**: Hidden items are randomized when found, not at game start
+- **Filtered**: Key items and progression items excluded from randomization
 
 ## 🔧 Technical Features
 
