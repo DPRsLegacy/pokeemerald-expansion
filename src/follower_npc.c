@@ -26,6 +26,7 @@
 #include "script_movement.h"
 #include "script_pokemon_util.h"
 #include "sound.h"
+#include "string_util.h"
 #include "task.h"
 #include "trig.h"
 #include "constants/event_object_movement.h"
@@ -1522,9 +1523,58 @@ void PrepareForFollowerNPCBattle(void)
 
 void RestorePartyAfterFollowerNPCBattle(void)
 {
+    // Save the frontier party data
     VarSet(VAR_0x8004, FRONTIER_UTIL_FUNC_SAVE_PARTY);
     CallFrontierUtilFunc();
-    LoadPlayerParty();
+    
+    // Check if we need to preserve a caught Pokémon
+    if (gBattleResults.caughtMonSpecies != SPECIES_NONE)
+    {
+        struct Pokemon caughtMon;
+        u8 caughtSlot = PARTY_SIZE;
+        u8 i;
+        
+        // Find the caught Pokémon in the current party
+        for (i = 0; i < PARTY_SIZE; i++)
+        {
+            if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL) != SPECIES_NONE &&
+                GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL) == gBattleResults.caughtMonSpecies)
+            {
+                u8 nickname[POKEMON_NAME_LENGTH + 1];
+                GetMonData(&gPlayerParty[i], MON_DATA_NICKNAME, nickname);
+                if (StringCompare(nickname, gBattleResults.caughtMonNick) == 0)
+                {
+                    caughtSlot = i;
+                    memcpy(&caughtMon, &gPlayerParty[i], sizeof(struct Pokemon));
+                    break;
+                }
+            }
+        }
+        
+        // Load the saved party
+        LoadPlayerParty();
+        
+        // If we found a caught Pokémon, add it to the loaded party
+        if (caughtSlot != PARTY_SIZE)
+        {
+            // Find an empty slot in the loaded party
+            for (i = 0; i < PARTY_SIZE; i++)
+            {
+                if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL) == SPECIES_NONE)
+                {
+                    // Add the caught Pokémon to the party
+                    memcpy(&gPlayerParty[i], &caughtMon, sizeof(struct Pokemon));
+                    gPlayerPartyCount = i + 1;
+                    break;
+                }
+            }
+        }
+    }
+    else
+    {
+        // No caught Pokémon, just load the saved party
+        LoadPlayerParty();
+    }
 }
 
 void FollowerNPC_TryRemoveFollowerOnWhiteOut(void)

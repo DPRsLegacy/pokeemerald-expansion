@@ -7,28 +7,60 @@
 
 u32 GetCurrentLevelCap(void)
 {
+    // Level caps for gym badges
     static const u32 sLevelCapFlagMap[][2] =
     {
-        {FLAG_BADGE01_GET, 15},
-        {FLAG_BADGE02_GET, 19},
-        {FLAG_BADGE03_GET, 24},
-        {FLAG_BADGE04_GET, 29},
-        {FLAG_BADGE05_GET, 31},
-        {FLAG_BADGE06_GET, 33},
-        {FLAG_BADGE07_GET, 42},
-        {FLAG_BADGE08_GET, 46},
-        {FLAG_IS_CHAMPION, 58},
+        {FLAG_BADGE01_GET, 15},  // Roxanne's Stone Badge
+        {FLAG_BADGE02_GET, 19},  // Brawly's Knuckle Badge
+        {FLAG_BADGE03_GET, 24},  // Wattson's Dynamo Badge
+        {FLAG_BADGE04_GET, 29},  // Flannery's Heat Badge
+        {FLAG_BADGE05_GET, 31},  // Norman's Balance Badge
+        {FLAG_BADGE06_GET, 33},  // Winona's Feather Badge
+        {FLAG_BADGE07_GET, 42},  // Tate & Liza's Mind Badge
+        {FLAG_BADGE08_GET, 46},  // Juan's Rain Badge
+        {FLAG_IS_CHAMPION, 58},  // After becoming Champion
+    };
+    
+    // Level caps for major story events
+    static const u32 sStoryLevelCapFlagMap[][2] =
+    {
+        {FLAG_ADVENTURE_STARTED, 10},           // After receiving Pokédex
+        {FLAG_DEFEATED_EVIL_TEAM_MT_CHIMNEY, 22}, // After defeating Team Magma/Aqua at Mt. Chimney
+        {FLAG_DELIVERED_DEVON_GOODS, 17},       // After delivering Devon Goods
+        {FLAG_DEFEATED_MAGMA_SPACE_CENTER, 40}, // After defeating Team Magma at Space Center
+        {FLAG_KYOGRE_ESCAPED_SEAFLOOR_CAVERN, 44}, // After Kyogre escapes Seafloor Cavern
+        {FLAG_DEFEATED_RAYQUAZA, 55},           // After defeating Rayquaza
+        {FLAG_DEFEATED_ELITE_4_DRAKE, 57},      // After defeating Drake of Elite Four
     };
 
     u32 i;
+    u32 gymCap = MAX_LEVEL;
+    u32 storyCap = MAX_LEVEL;
 
     if (B_LEVEL_CAP_TYPE == LEVEL_CAP_FLAG_LIST)
     {
+        // Check gym badge caps
         for (i = 0; i < ARRAY_COUNT(sLevelCapFlagMap); i++)
         {
             if (!FlagGet(sLevelCapFlagMap[i][0]))
-                return sLevelCapFlagMap[i][1];
+            {
+                gymCap = sLevelCapFlagMap[i][1];
+                break;
+            }
         }
+        
+        // Check story event caps
+        for (i = 0; i < ARRAY_COUNT(sStoryLevelCapFlagMap); i++)
+        {
+            if (!FlagGet(sStoryLevelCapFlagMap[i][0]))
+            {
+                storyCap = sStoryLevelCapFlagMap[i][1];
+                break;
+            }
+        }
+        
+        // Return the lower of the two caps
+        return gymCap < storyCap ? gymCap : storyCap;
     }
     else if (B_LEVEL_CAP_TYPE == LEVEL_CAP_VARIABLE)
     {

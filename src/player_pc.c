@@ -380,10 +380,10 @@ void NewGameInitPCItems(void)
         i++;
     }
     
-    // If both randomizer and nuzlocke modes are enabled, add infinite Rare Candies to PC
+    // If both randomizer and nuzlocke modes are enabled, add Infinite Candy to PC
     if (gSaveBlock2Ptr->randomizerEnabled && gSaveBlock2Ptr->nuzlockeEnabled)
     {
-        AddPCItem(ITEM_RARE_CANDY, 999);
+        AddPCItem(ITEM_INFINITE_CANDY, 1);
     }
 }
 

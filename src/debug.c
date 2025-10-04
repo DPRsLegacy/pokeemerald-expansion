@@ -250,6 +250,7 @@ enum GiveDebugMenu
     DEBUG_GIVE_MENU_ITEM_MAX_COINS,
     DEBUG_GIVE_MENU_ITEM_MAX_BATTLE_POINTS,
     DEBUG_GIVE_MENU_ITEM_DAYCARE_EGG,
+    DEBUG_GIVE_MENU_ITEM_INFINITE_CANDY,
 };
 
 enum SoundDebugMenu
@@ -806,6 +807,7 @@ static const struct ListMenuItem sDebugMenu_Items_Give[] =
     [DEBUG_GIVE_MENU_ITEM_MAX_COINS]         = {COMPOUND_STRING("Max Coins"),                                    DEBUG_GIVE_MENU_ITEM_MAX_COINS},
     [DEBUG_GIVE_MENU_ITEM_MAX_BATTLE_POINTS] = {COMPOUND_STRING("Max Battle Points"),                            DEBUG_GIVE_MENU_ITEM_MAX_BATTLE_POINTS},
     [DEBUG_GIVE_MENU_ITEM_DAYCARE_EGG]       = {COMPOUND_STRING("Daycare Egg"),                                  DEBUG_GIVE_MENU_ITEM_DAYCARE_EGG},
+    [DEBUG_GIVE_MENU_ITEM_INFINITE_CANDY]    = {COMPOUND_STRING("Infinite Candy"),                               DEBUG_GIVE_MENU_ITEM_INFINITE_CANDY},
 };
 
 static const struct ListMenuItem sDebugMenu_Items_Sound[] =
@@ -932,6 +934,8 @@ static void (*const sDebugMenu_Actions_Flags[])(u8) =
     [DEBUG_FLAGVAR_MENU_ITEM_TOGGLE_BAG_USE]       = DebugAction_FlagsVars_BagUseOnOff,
     [DEBUG_FLAGVAR_MENU_ITEM_TOGGLE_CATCHING]      = DebugAction_FlagsVars_CatchingOnOff,
 };
+static void DebugAction_Give_InfiniteCandy(u8 taskId);
+
 static void (*const sDebugMenu_Actions_Give[])(u8) =
 {
     [DEBUG_GIVE_MENU_ITEM_ITEM_X]            = DebugAction_Give_Item,
@@ -941,6 +945,7 @@ static void (*const sDebugMenu_Actions_Give[])(u8) =
     [DEBUG_GIVE_MENU_ITEM_MAX_COINS]         = DebugAction_Give_MaxCoins,
     [DEBUG_GIVE_MENU_ITEM_MAX_BATTLE_POINTS] = DebugAction_Give_MaxBattlePoints,
     [DEBUG_GIVE_MENU_ITEM_DAYCARE_EGG]       = DebugAction_Give_DayCareEgg,
+    [DEBUG_GIVE_MENU_ITEM_INFINITE_CANDY]    = DebugAction_Give_InfiniteCandy,
 };
 
 static void (*const sDebugMenu_Actions_Sound[])(u8) =
@@ -3823,6 +3828,14 @@ static void DebugAction_Give_DayCareEgg(u8 taskId)
         Debug_DestroyMenu_Full_Script(taskId, DebugScript_DaycareMonsNotCompatible);
     else // 2 pokemon which can have a pokemon baby together
         TriggerPendingDaycareEgg();
+}
+
+static void DebugAction_Give_InfiniteCandy(u8 taskId)
+{
+    PlaySE(MUS_LEVEL_UP);
+    AddBagItem(ITEM_INFINITE_CANDY, 1);
+    Debug_DestroyMenu_Full(taskId);
+    ScriptContext_Enable();
 }
 
 // *******************************

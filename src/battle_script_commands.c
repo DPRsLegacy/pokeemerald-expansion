@@ -16269,9 +16269,14 @@ static void Cmd_givecaughtmon(void)
             gBattlescriptCurrInstr = cmd->nextInstr;
         break;
     }
-    // Save the player's party again to not interferes with RestorePartyAfterFollowerNPCBattle() called after battle.
+    // Save the player's party again to not interfere with RestorePartyAfterFollowerNPCBattle() called after battle.
+    // Also ensure the caught Pokémon is properly saved in the party
     if (IsNPCFollowerWildBattle())
+    {
+        // Update the saved party count to include the newly caught Pokémon
+        gSaveBlock1Ptr->playerPartyCount = gPlayerPartyCount;
         SavePlayerParty();
+    }
 }
 
 static void Cmd_trysetcaughtmondexflags(void)

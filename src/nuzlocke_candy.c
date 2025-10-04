@@ -20,6 +20,7 @@ bool8 CanUseRareCandyInNuzlocke(struct Pokemon *mon)
     u32 levelCap = GetCurrentLevelCap();
     
     // Don't allow Rare Candy use if it would exceed the level cap
+    // This applies to both regular Rare Candy and Infinite Candy
     if (currentLevel >= levelCap)
         return FALSE;
     
