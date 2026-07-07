@@ -804,6 +804,7 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg);
 void CopyMon(void *dest, void *src, size_t size);
 u8 GiveCapturedMonToPlayer(struct Pokemon *mon);
 u8 CopyMonToPC(struct Pokemon *mon);
+void CheckAndReleaseFaintedPokemonNuzlocke(void);
 u8 CalculatePlayerPartyCount(void);
 u8 CalculatePartnerPartyCount(void);
 u8 CalculateEnemyPartyCount(void);

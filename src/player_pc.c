@@ -366,6 +366,18 @@ void NewGameInitPCItems(void)
             break;
         i++;
     }
+    
+    // If both randomizer and nuzlocke modes are enabled, add Infinite Candy to PC
+    if (gSaveBlock2Ptr->randomizerEnabled && gSaveBlock2Ptr->nuzlockeEnabled)
+    {
+        AddPCItem(ITEM_INFINITE_CANDY, 1);
+    }
+
+    // If Soul Link mode is enabled, add 30 Soul Link Balls to PC
+    if (gSaveBlock2Ptr->soulLinkEnabled)
+    {
+        AddPCItem(ITEM_SOUL_LINK_BALL, 30);
+    }
 }
 
 void BedroomPC(void)

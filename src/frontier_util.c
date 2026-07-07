@@ -11,6 +11,7 @@
 #include "field_specials.h"
 #include "battle.h"
 #include "script_pokemon_util.h"
+#include "script.h"
 #include "main.h"
 #include "window.h"
 #include "menu.h"

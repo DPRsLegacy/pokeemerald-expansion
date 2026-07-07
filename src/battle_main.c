@@ -29,6 +29,7 @@
 #include "field_weather.h"
 #include "follower_npc.h"
 #include "graphics.h"
+#include "starter_choose.h"
 #include "gpu_regs.h"
 #include "international_string_util.h"
 #include "item.h"
@@ -77,6 +78,7 @@
 #include "constants/songs.h"
 #include "constants/trainer_slide.h"
 #include "constants/trainers.h"
+#include "difficulty.h"
 #include "constants/weather.h"
 #include "cable_club.h"
 
@@ -1836,10 +1838,64 @@ u32 GeneratePersonalityForGender(u32 gender, enum Species species)
         return speciesInfo->genderRatio / 2;
 }
 
+static void AssignRandomMovesToMon(struct Pokemon *mon, u32 seed)
+{
+    u32 j;
+    u16 randomMoves[MAX_MON_MOVES];
+    u32 attempts;
+    
+    // Seed the RNG for consistent move generation
+    SeedRng(seed);
+    
+    // Generate 4 random moves
+    for (j = 0; j < MAX_MON_MOVES; j++)
+    {
+        attempts = 0;
+        do {
+            randomMoves[j] = (Random() % MOVES_COUNT) + 1; // Random move from 1 to MOVES_COUNT
+            attempts++;
+            
+            // Prevent infinite loops - fallback to basic moves if too many attempts
+            if (attempts > 100)
+            {
+                switch (j)
+                {
+                    case 0: randomMoves[j] = MOVE_TACKLE; break;
+                    case 1: randomMoves[j] = MOVE_GROWL; break;
+                    case 2: randomMoves[j] = MOVE_SCRATCH; break;
+                    case 3: randomMoves[j] = MOVE_LEER; break;
+                }
+                break;
+            }
+            
+            // Make sure we don't have duplicate moves and that the move is valid
+        } while (randomMoves[j] <= MOVE_NONE || 
+                 randomMoves[j] > MOVES_COUNT ||
+                 (j > 0 && (randomMoves[j] == randomMoves[0])) ||
+                 (j > 1 && (randomMoves[j] == randomMoves[1])) ||
+                 (j > 2 && (randomMoves[j] == randomMoves[2])));
+        
+        u32 pp = GetMovePP(randomMoves[j]);
+        SetMonData(mon, MON_DATA_MOVE1 + j, &randomMoves[j]);
+        SetMonData(mon, MON_DATA_PP1 + j, &pp);
+    }
+}
+
 void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon *partyEntry)
 {
     bool32 noMoveSet = TRUE;
     u32 j;
+
+    // Check if randomizer mode is enabled
+    if (gSaveBlock2Ptr->randomizerEnabled)
+    {
+        // Generate random moves using species and trainer data as seed
+        u32 species = GetMonData(mon, MON_DATA_SPECIES);
+        u32 personality = GetMonData(mon, MON_DATA_PERSONALITY);
+        u32 seed = gSaveBlock2Ptr->encryptionKey + species + personality;
+        AssignRandomMovesToMon(mon, seed);
+        return;
+    }
 
     for (j = 0; j < MAX_MON_MOVES; ++j)
     {
@@ -1915,11 +1971,92 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 otId.method = OT_ID_PRESET;
                 otId.value = HIHALF(personalityValue) ^ LOHALF(personalityValue);
             }
-            CreateMon(&party[i], partyData[monIndex].species, partyData[monIndex].lvl, personalityValue, otId);
-            SetMonData(&party[i], MON_DATA_HELD_ITEM, &partyData[monIndex].heldItem);
+            u16 speciesForTrainer = partyData[monIndex].species;
+            u8 enhancedLevel = partyData[monIndex].lvl;
+            u32 enhancedIVs = partyData[monIndex].iv;
+            const u16 *enhancedItems = NULL;
+
+            if (gSaveBlock2Ptr->randomizerEnabled)
+            {
+                u32 seed = gSaveBlock2Ptr->encryptionKey + i + partyData[monIndex].species;
+                SeedRng(seed);
+                speciesForTrainer = GetRandomValidPokemon();
+            }
+
+            if (IsMajorBattle(trainer->trainerClass))
+            {
+                enum DifficultyScaling scaling = GetCurrentDifficultyScaling();
+                enhancedLevel = GetEnhancedTrainerMonLevel(partyData[monIndex].lvl, scaling);
+                enhancedIVs = GetEnhancedTrainerMonIVs(partyData[monIndex].iv, scaling);
+                enhancedItems = GetEnhancedTrainerItems(trainer->trainerClass, scaling);
+
+                if (ShouldTrainerUseTerastallization(trainer->trainerClass, scaling))
+                {
+                    if (trainer->trainerClass == TRAINER_CLASS_LEADER)
+                    {
+                        bool8 isAcePokemon = (i == monsCount - 1);
+
+                        if (isAcePokemon && !HasTerastallizationBeenUsedInBattle())
+                        {
+                            gBattleStruct->opponentMonCanTera |= 1 << i;
+                            if (partyData[monIndex].teraType == 0)
+                            {
+                                u32 teraType = (Random() % 18) + 1;
+                                SetMonData(&party[i], MON_DATA_TERA_TYPE, &teraType);
+                            }
+                            MarkTerastallizationAsUsedInBattle();
+                        }
+                    }
+                    else
+                    {
+                        gBattleStruct->opponentMonCanTera |= 1 << i;
+                        if (partyData[monIndex].teraType == 0)
+                        {
+                            u32 teraType = (Random() % 18) + 1;
+                            SetMonData(&party[i], MON_DATA_TERA_TYPE, &teraType);
+                        }
+                    }
+                }
+
+                if (ShouldTrainerUseDynamax(trainer->trainerClass, scaling))
+                {
+                    if (trainer->trainerClass == TRAINER_CLASS_LEADER
+                     || trainer->trainerClass == TRAINER_CLASS_ELITE_FOUR
+                     || trainer->trainerClass == TRAINER_CLASS_CHAMPION)
+                    {
+                        bool8 isAcePokemon = (i == monsCount - 1);
+
+                        if (isAcePokemon)
+                        {
+                            gBattleStruct->opponentMonCanDynamax |= 1 << i;
+                            if (partyData[monIndex].dynamaxLevel == 0)
+                            {
+                                u32 dynamaxLevel = 10;
+                                SetMonData(&party[i], MON_DATA_DYNAMAX_LEVEL, &dynamaxLevel);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        gBattleStruct->opponentMonCanDynamax |= 1 << i;
+                        if (partyData[monIndex].dynamaxLevel == 0)
+                        {
+                            u32 dynamaxLevel = 10;
+                            SetMonData(&party[i], MON_DATA_DYNAMAX_LEVEL, &dynamaxLevel);
+                        }
+                    }
+                }
+            }
+
+            CreateMon(&party[i], speciesForTrainer, enhancedLevel, personalityValue, otId);
+
+            if (enhancedItems != NULL)
+                SetMonData(&party[i], MON_DATA_HELD_ITEM, &enhancedItems[i % MAX_TRAINER_ITEMS]);
+            else
+                SetMonData(&party[i], MON_DATA_HELD_ITEM, &partyData[monIndex].heldItem);
 
             CustomTrainerPartyAssignMoves(&party[i], &partyData[monIndex]);
-            SetMonData(&party[i], MON_DATA_IVS, &(partyData[monIndex].iv));
+            SetMonData(&party[i], MON_DATA_IVS, &enhancedIVs);
             if (partyData[monIndex].ev != NULL)
             {
                 SetMonData(&party[i], MON_DATA_HP_EV, &(partyData[monIndex].ev[0]));

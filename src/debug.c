@@ -4969,3 +4969,19 @@ void CheckEWRAMCounters(struct ScriptContext *ctx)
     ConvertIntToDecimalStringN(gStringVar1, gFollowerSteps, STR_CONV_MODE_LEFT_ALIGN, 5);
     ConvertIntToDecimalStringN(gStringVar2, gChainFishingDexNavStreak, STR_CONV_MODE_LEFT_ALIGN, 5);
 }
+
+void SetHiddenNature(void)
+{
+    u8 partyIndex = gSpecialVar_0x8004;
+    u32 nature = gSpecialVar_Result;
+    if (partyIndex < PARTY_SIZE && nature < NUM_NATURES)
+        SetMonData(&gPlayerParty[partyIndex], MON_DATA_HIDDEN_NATURE, &nature);
+}
+
+void SetAbility(void)
+{
+    u8 partyIndex = gSpecialVar_0x8004;
+    u32 abilityNum = gSpecialVar_Result;
+    if (partyIndex < PARTY_SIZE && abilityNum <= 2)
+        SetMonData(&gPlayerParty[partyIndex], MON_DATA_ABILITY_NUM, &abilityNum);
+}

@@ -46,6 +46,9 @@ const u16 gBallPal_Luxury[] = INCGFX_U16("graphics/balls/luxury.png", ".gbapal")
 const u32 gBallGfx_Level[] = INCGFX_U32("graphics/balls/level.png", ".4bpp.smol");
 const u16 gBallPal_Level[] = INCGFX_U16("graphics/balls/level.png", ".gbapal");
 
+const u32 gBallGfx_Link[] = INCGFX_U32("graphics/balls/link.png", ".4bpp.smol");
+const u16 gBallPal_Link[] = INCGFX_U16("graphics/balls/link.png", ".gbapal");
+
 const u32 gBallGfx_Lure[] = INCGFX_U32("graphics/balls/lure.png", ".4bpp.smol");
 const u16 gBallPal_Lure[] = INCGFX_U16("graphics/balls/lure.png", ".gbapal");
 

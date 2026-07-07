@@ -4885,6 +4885,29 @@ void ItemUseCB_Medicine(u8 taskId, TaskFunc task)
     enum Item item = gSpecialVar_ItemId;
     bool8 canHeal, cannotUse;
     u32 oldStatus = GetMonData(mon, MON_DATA_STATUS);
+    
+    // Check if this is a revival item and if we're in nuzlocke mode
+    if (GetMonData(mon, MON_DATA_HP) == 0)
+    {
+        // Revival items
+        if (item == ITEM_REVIVAL_HERB || item == ITEM_REVIVE || 
+            item == ITEM_MAX_REVIVE || item == ITEM_SACRED_ASH)
+        {
+            // In nuzlocke mode, you can't revive fainted Pokémon
+            if (gSaveBlock2Ptr->nuzlockeEnabled)
+            {
+                gPartyMenuUseExitCallback = FALSE;
+                PlaySE(SE_SELECT);
+                DisplayPartyMenuMessage(gText_WontHaveEffect, TRUE);
+                ScheduleBgCopyTilemapToVram(2);
+                if (gPartyMenu.menuType == PARTY_MENU_TYPE_FIELD)
+                    gTasks[taskId].func = Task_ReturnToChooseMonAfterText;
+                else
+                    gTasks[taskId].func = task;
+                return;
+            }
+        }
+    }
 
     if (NotUsingHPEVItemOnShedinja(mon, item) == FALSE)
     {
@@ -5816,6 +5839,8 @@ static void UNUSED DisplayExpPoints(u8 taskId, TaskFunc task, u8 holdEffectParam
     gTasks[taskId].func = task;
 }
 
+#include "nuzlocke_candy.h"
+
 void ItemUseCB_RareCandy(u8 taskId, TaskFunc task)
 {
     struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gPartyMenu.slotId];
@@ -5824,6 +5849,16 @@ void ItemUseCB_RareCandy(u8 taskId, TaskFunc task)
     u16 *itemPtr = &gSpecialVar_ItemId;
     bool8 cannotUseEffect;
     u8 holdEffectParam = GetItemHoldEffectParam(*itemPtr);
+
+    // Check if we can use Rare Candy in Nuzlocke mode
+    if (!CanUseRareCandyInNuzlocke(mon))
+    {
+        gPartyMenuUseExitCallback = FALSE;
+        DisplayPartyMenuMessage(gText_WontHaveEffect, TRUE);
+        ScheduleBgCopyTilemapToVram(2);
+        gTasks[taskId].func = task;
+        return;
+    }
 
     sInitialLevel = GetMonData(mon, MON_DATA_LEVEL);
     if (!(B_RARE_CANDY_CAP && sInitialLevel >= GetCurrentLevelCap()))
@@ -5854,7 +5889,8 @@ void ItemUseCB_RareCandy(u8 taskId, TaskFunc task)
         if (targetSpecies != SPECIES_NONE)
         {
             GetEvolutionTargetSpecies(mon, EVO_MODE_NORMAL, ITEM_NONE, NULL, &canStopEvo, DO_EVO);
-            RemoveBagItem(gSpecialVar_ItemId, 1);
+            if (GetItemConsumability(gSpecialVar_ItemId))
+                RemoveBagItem(gSpecialVar_ItemId, 1);
             FreePartyPointers();
             gCB2_AfterEvolution = gPartyMenu.exitCallback;
             BeginEvolutionScene(mon, targetSpecies, canStopEvo, gPartyMenu.slotId);
@@ -5873,7 +5909,8 @@ void ItemUseCB_RareCandy(u8 taskId, TaskFunc task)
         sFinalLevel = GetMonData(mon, MON_DATA_LEVEL);
         gPartyMenuUseExitCallback = TRUE;
         UpdateMonDisplayInfoAfterRareCandy(gPartyMenu.slotId, mon);
-        RemoveBagItem(gSpecialVar_ItemId, 1);
+        if (GetItemConsumability(gSpecialVar_ItemId))
+            RemoveBagItem(gSpecialVar_ItemId, 1);
         GetMonNickname(mon, gStringVar1);
         if (sFinalLevel > sInitialLevel)
         {
@@ -6162,6 +6199,17 @@ void ItemUseCB_DynamaxCandy(u8 taskId, TaskFunc task)
 
 void ItemUseCB_SacredAsh(u8 taskId, TaskFunc task)
 {
+    // In nuzlocke mode, Sacred Ash doesn't work on fainted Pokémon
+    if (gSaveBlock2Ptr->nuzlockeEnabled)
+    {
+        gPartyMenuUseExitCallback = FALSE;
+        PlaySE(SE_SELECT);
+        DisplayPartyMenuMessage(gText_WontHaveEffect, TRUE);
+        ScheduleBgCopyTilemapToVram(2);
+        gTasks[taskId].func = task;
+        return;
+    }
+    
     sPartyMenuInternal->tUsedOnSlot = FALSE;
     sPartyMenuInternal->tHadEffect = FALSE;
     sPartyMenuInternal->tLastSlotUsed = gPartyMenu.slotId;
@@ -7074,6 +7122,9 @@ static void TryTutorSelectedMon(u8 taskId)
 
 void CB2_PartyMenuFromStartMenu(void)
 {
+    // Check for fainted Pokemon to release in Nuzlocke mode
+    CheckAndReleaseFaintedPokemonNuzlocke();
+    
     InitPartyMenu(PARTY_MENU_TYPE_FIELD, PARTY_LAYOUT_SINGLE, PARTY_ACTION_CHOOSE_MON, FALSE, PARTY_MSG_CHOOSE_MON, Task_HandleChooseMonInput, CB2_ReturnToFieldWithOpenMenu);
 }
 

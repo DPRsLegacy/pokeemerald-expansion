@@ -663,3 +663,15 @@ void Script_GiveRandomBerry(struct ScriptContext *ctx)
 
     gSpecialVar_Result = BerryTypeToItemId(RandomUniform(RNG_RANDOM_BERRY, loBerry, hiBerry));
 }
+
+void CheckKarrpyWailordStarter(void)
+{
+    // Stub: set FALSE so normal Eevee trade dialogue runs. Implement for "Karrpy with Wailord starter" if needed.
+    gSpecialVar_Result = FALSE;
+}
+
+void CheckIfSelectedMonIsFirstPartyMon(void)
+{
+    // Stub: set FALSE. Implement to check if the party mon chosen in a script is the first party mon.
+    gSpecialVar_Result = FALSE;
+}

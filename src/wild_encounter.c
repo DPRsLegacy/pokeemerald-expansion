@@ -30,6 +30,7 @@
 #include "constants/items.h"
 #include "constants/layouts.h"
 #include "constants/weather.h"
+#include "starter_choose.h"
 
 extern const u8 EventScript_SprayWoreOff[];
 
@@ -531,7 +532,22 @@ bool8 TryGenerateWildMon(const struct WildPokemonInfo *wildMonInfo, enum WildPok
     if (gMapHeader.mapLayoutId != LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_WILD_MONS && flags & WILD_CHECK_KEEN_EYE && !IsAbilityAllowingEncounter(level))
         return FALSE;
 
-    CreateWildMon(wildMonInfo->wildPokemon[wildMonIndex].species, level);
+    // If randomizer mode is enabled, use a random species but keep the original level logic
+    if (gSaveBlock2Ptr->randomizerEnabled)
+    {
+        // Use a seed based on the original species and current location for consistency
+        u32 originalSpecies = wildMonInfo->wildPokemon[wildMonIndex].species;
+        u32 seed = gSaveBlock2Ptr->encryptionKey + originalSpecies + (gSaveBlock1Ptr->location.mapGroup << 8) + gSaveBlock1Ptr->location.mapNum;
+        SeedRng(seed);
+        
+        // Get a random valid Pokemon but use the level from the original encounter table
+        u16 randomSpecies = GetRandomValidPokemon();
+        CreateWildMon(randomSpecies, level);
+    }
+    else
+    {
+        CreateWildMon(wildMonInfo->wildPokemon[wildMonIndex].species, level);
+    }
     return TRUE;
 }
 
@@ -542,6 +558,18 @@ static u16 GenerateFishingWildMon(const struct WildPokemonInfo *wildMonInfo, u8 
     u8 level = ChooseWildMonLevel(wildMonInfo->wildPokemon, wildMonIndex, WILD_AREA_FISHING);
 
     UpdateChainFishingStreak();
+    
+    // If randomizer mode is enabled, use a random species but keep the original level logic
+    if (gSaveBlock2Ptr->randomizerEnabled)
+    {
+        // Use a seed based on the original species and current location for consistency
+        u32 seed = gSaveBlock2Ptr->encryptionKey + wildMonSpecies + (gSaveBlock1Ptr->location.mapGroup << 8) + gSaveBlock1Ptr->location.mapNum;
+        SeedRng(seed);
+        
+        // Get a random valid Pokemon but use the level from the original encounter table
+        wildMonSpecies = GetRandomValidPokemon();
+    }
+    
     CreateWildMon(wildMonSpecies, level);
     return wildMonSpecies;
 }
@@ -553,7 +581,20 @@ bool8 SetUpMassOutbreakEncounter(u8 flags)
     if (flags & WILD_CHECK_REPEL && !IsWildLevelAllowedByRepel(gSaveBlock1Ptr->outbreakPokemonLevel))
         return FALSE;
 
-    CreateWildMon(gSaveBlock1Ptr->outbreakPokemonSpecies, gSaveBlock1Ptr->outbreakPokemonLevel);
+    // Handle randomization for mass outbreak encounters
+    if (gSaveBlock2Ptr->randomizerEnabled)
+    {
+        // Use a seed based on the outbreak species and location for consistency
+        u32 seed = gSaveBlock2Ptr->encryptionKey + gSaveBlock1Ptr->outbreakPokemonSpecies + (gSaveBlock1Ptr->location.mapGroup << 8) + gSaveBlock1Ptr->location.mapNum;
+        SeedRng(seed);
+        
+        u16 randomSpecies = GetRandomValidPokemon();
+        CreateWildMon(randomSpecies, gSaveBlock1Ptr->outbreakPokemonLevel);
+    }
+    else
+    {
+        CreateWildMon(gSaveBlock1Ptr->outbreakPokemonSpecies, gSaveBlock1Ptr->outbreakPokemonLevel);
+    }
     for (i = 0; i < MAX_MON_MOVES; i++)
         SetMonMoveSlot(&gParties[B_TRAINER_OPPONENT_A][0], gSaveBlock1Ptr->outbreakPokemonMoves[i], i);
 
@@ -936,6 +977,14 @@ void FishingWildEncounter(u8 rod)
         u8 level = ChooseWildMonLevel(&gWildFeebas, 0, WILD_AREA_FISHING);
 
         species = gWildFeebas.species;
+
+        // Handle randomization for special Feebas encounters
+        if (gSaveBlock2Ptr->randomizerEnabled)
+        {
+            u32 seed = gSaveBlock2Ptr->encryptionKey + species + (gSaveBlock1Ptr->location.mapGroup << 8) + gSaveBlock1Ptr->location.mapNum;
+            SeedRng(seed);
+            species = GetRandomValidPokemon();
+        }
         CreateWildMon(species, level);
     }
     else

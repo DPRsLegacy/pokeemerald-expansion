@@ -137,6 +137,7 @@ DewfordTown_Gym_EventScript_Brawly::
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, DewfordTown_Gym_EventScript_BrawlyRematch
 	goto_if_unset FLAG_RECEIVED_TM_BULK_UP, DewfordTown_Gym_EventScript_GiveBulkUp2
+	goto_if_unset FLAG_RECEIVED_DYNAMAX_BAND, DewfordTown_Gym_EventScript_GiveDynamaxBand2
 	msgbox DewfordTown_Gym_Text_BrawlyPostBattle, MSGBOX_DEFAULT
 	release
 	end
@@ -154,6 +155,7 @@ DewfordTown_Gym_EventScript_BrawlyDefeated::
 	setvar VAR_0x8008, 2
 	call Common_EventScript_SetGymTrainers
 	call DewfordTown_Gym_EventScript_GiveBulkUp
+	call DewfordTown_Gym_EventScript_GiveDynamaxBand
 	closemessage
 	delay 30
 	playfanfare MUS_REGISTER_MATCH_CALL
@@ -179,6 +181,23 @@ DewfordTown_Gym_EventScript_GiveBulkUp2:
 	goto_if_eq VAR_RESULT, 0, Common_EventScript_ShowBagIsFull
 	msgbox DewfordTown_Gym_Text_ExplainBulkUp, MSGBOX_DEFAULT
 	setflag FLAG_RECEIVED_TM_BULK_UP
+	release
+	end
+
+DewfordTown_Gym_EventScript_GiveDynamaxBand::
+	msgbox DewfordTown_Gym_Text_BrawlyDynamaxBandIntro, MSGBOX_DEFAULT
+	giveitem ITEM_DYNAMAX_BAND
+	goto_if_eq VAR_RESULT, 0, Common_EventScript_BagIsFull
+	msgbox DewfordTown_Gym_Text_ExplainDynamaxBand, MSGBOX_DEFAULT
+	setflag FLAG_RECEIVED_DYNAMAX_BAND
+	return
+
+DewfordTown_Gym_EventScript_GiveDynamaxBand2:
+	msgbox DewfordTown_Gym_Text_BrawlyDynamaxBandIntro, MSGBOX_DEFAULT
+	giveitem ITEM_DYNAMAX_BAND
+	goto_if_eq VAR_RESULT, 0, Common_EventScript_ShowBagIsFull
+	msgbox DewfordTown_Gym_Text_ExplainDynamaxBand, MSGBOX_DEFAULT
+	setflag FLAG_RECEIVED_DYNAMAX_BAND
 	release
 	end
 
@@ -457,3 +476,19 @@ DewfordTown_Gym_Text_BrawlyRematchNeedTwoMons:
 	.string "that can battle.\p"
 	.string "I'm sorry, but I'd like you to come back\n"
 	.string "with at least two POKéMON.$"
+
+DewfordTown_Gym_Text_BrawlyDynamaxBandIntro:
+	.string "Oh, and one more thing!\p"
+	.string "I've been traveling to distant regions,\n"
+	.string "and I came across this amazing item\l"
+	.string "from the Galar region.\p"
+	.string "It's called a DYNAMAX BAND.\n"
+	.string "I want you to have it!$"
+
+DewfordTown_Gym_Text_ExplainDynamaxBand:
+	.string "With that DYNAMAX BAND, you'll be able\n"
+	.string "to Dynamax your POKéMON in battle!\p"
+	.string "It unleashes their true power and makes\n"
+	.string "them grow to enormous size!\p"
+	.string "Use it wisely in your most important\n"
+	.string "battles!$"

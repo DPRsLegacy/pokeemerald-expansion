@@ -21,9 +21,9 @@ enum InGameTradeID
     INGAME_TRADE_ELECTRODE,
     INGAME_TRADE_TANGELA,
     INGAME_TRADE_SEEL,
+    INGAME_TRADE_EEVEE,
+    INGAME_TRADE_EEVEE_SHINY,
 };
-
-// Return values for CanTradeSelectedMon and CanSpinTradeMon
 #define CAN_TRADE_MON              0
 #define CANT_TRADE_LAST_MON        1
 #define CANT_TRADE_NATIONAL        2

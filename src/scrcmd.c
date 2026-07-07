@@ -2562,6 +2562,13 @@ bool8 ScrCmd_pokemart(struct ScriptContext *ctx)
     return TRUE;
 }
 
+bool8 ScrCmd_setcustommartprice(struct ScriptContext *ctx)
+{
+    u32 price = ScriptReadHalfword(ctx);
+    Shop_SetCustomMartPrice(price);
+    return FALSE;
+}
+
 bool8 ScrCmd_pokemartdecoration(struct ScriptContext *ctx)
 {
     const void *ptr = (void *)ScriptReadWord(ctx);

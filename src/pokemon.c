@@ -9,6 +9,7 @@
 #include "battle_pike.h"
 #include "battle_pyramid.h"
 #include "battle_setup.h"
+#include "constants/battle.h"
 #include "battle_tower.h"
 #include "battle_z_move.h"
 #include "caps.h"
@@ -46,6 +47,7 @@
 #include "regions.h"
 #include "rtc.h"
 #include "sound.h"
+#include "starter_choose.h"
 #include "string_util.h"
 #include "strings.h"
 #include "task.h"
@@ -2981,9 +2983,96 @@ void CopyMon(void *dest, void *src, size_t size)
     memcpy(dest, src, size);
 }
 
+// Nuzlocke helper functions
+static bool8 IsNuzlockeAreaAlreadyCaught(u16 mapNum)
+{
+    if (!gSaveBlock2Ptr->nuzlockeEnabled)
+        return FALSE;
+
+    u16 byteIndex = mapNum / 8;
+    u8 bitIndex = mapNum % 8;
+
+    if (byteIndex >= sizeof(gSaveBlock2Ptr->nuzlockeCaughtAreas))
+        return FALSE;
+
+    return (gSaveBlock2Ptr->nuzlockeCaughtAreas[byteIndex] & (1 << bitIndex)) != 0;
+}
+
+static void MarkNuzlockeAreaAsCaught(u16 mapNum)
+{
+    if (!gSaveBlock2Ptr->nuzlockeEnabled)
+        return;
+
+    u16 byteIndex = mapNum / 8;
+    u8 bitIndex = mapNum % 8;
+
+    if (byteIndex >= sizeof(gSaveBlock2Ptr->nuzlockeCaughtAreas))
+        return;
+
+    gSaveBlock2Ptr->nuzlockeCaughtAreas[byteIndex] |= (1 << bitIndex);
+}
+
+void CheckAndReleaseFaintedPokemonNuzlocke(void)
+{
+    s32 i, j;
+
+    if (!gSaveBlock2Ptr->nuzlockeEnabled)
+        return;
+
+    CalculatePlayerPartyCount();
+
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES, NULL) != SPECIES_NONE)
+        {
+            if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_HP, NULL) == 0)
+            {
+                ZeroMonData(&gParties[B_TRAINER_PLAYER][i]);
+
+                for (j = i; j < PARTY_SIZE - 1; j++)
+                {
+                    if (GetMonData(&gParties[B_TRAINER_PLAYER][j + 1], MON_DATA_SPECIES, NULL) != SPECIES_NONE)
+                    {
+                        gParties[B_TRAINER_PLAYER][j] = gParties[B_TRAINER_PLAYER][j + 1];
+                        ZeroMonData(&gParties[B_TRAINER_PLAYER][j + 1]);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                gPartiesCount[B_TRAINER_PLAYER]--;
+                i--;
+            }
+        }
+    }
+}
+
 u8 GiveCapturedMonToPlayer(struct Pokemon *mon)
 {
     s32 i;
+
+    // Nuzlocke rule: Only one Pokemon per area (shiny exception: shinies can always be caught; Soul Link Ball bypasses)
+    if (gSaveBlock2Ptr->nuzlockeEnabled && !IsMonShiny(mon))
+    {
+        bool8 soulLinkBypass = (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER) && ItemIdToBallId(gLastUsedItem) == BALL_SOUL_LINK);
+        if (!soulLinkBypass)
+        {
+            if (gBattleTypeFlags & BATTLE_TYPE_SAFARI)
+            {
+                // In Safari Zone, use different map tracking
+                if (IsNuzlockeAreaAlreadyCaught(gMapHeader.mapLayoutId + 1000))
+                    return MON_CANT_GIVE; // Prevent catching if already caught in this Safari area
+            }
+            else if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
+            {
+                // For wild battles (no trainer), use current map
+                if (IsNuzlockeAreaAlreadyCaught(gMapHeader.mapLayoutId))
+                    return MON_CANT_GIVE; // Prevent catching if already caught in this area
+            }
+        }
+    }
 
     SetMonData(mon, MON_DATA_OT_NAME, gSaveBlock2Ptr->playerName);
     SetMonData(mon, MON_DATA_OT_GENDER, &gSaveBlock2Ptr->playerGender);
@@ -2996,10 +3085,32 @@ u8 GiveCapturedMonToPlayer(struct Pokemon *mon)
     }
 
     if (i >= PARTY_SIZE)
-        return CopyMonToPC(mon);
+    {
+        u8 result = CopyMonToPC(mon);
+        
+        // Mark area as caught if successful
+        if (result == MON_GIVEN_TO_PC && gSaveBlock2Ptr->nuzlockeEnabled)
+        {
+            if (gBattleTypeFlags & BATTLE_TYPE_SAFARI)
+                MarkNuzlockeAreaAsCaught(gMapHeader.mapLayoutId + 1000);
+            else if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
+                MarkNuzlockeAreaAsCaught(gMapHeader.mapLayoutId);
+        }
+        
+        return result;
+    }
 
     CopyMon(&gParties[B_TRAINER_PLAYER][i], mon, sizeof(*mon));
     gPartiesCount[B_TRAINER_PLAYER] = i + 1;
+
+    if (gSaveBlock2Ptr->nuzlockeEnabled)
+    {
+        if (gBattleTypeFlags & BATTLE_TYPE_SAFARI)
+            MarkNuzlockeAreaAsCaught(gMapHeader.mapLayoutId + 1000);
+        else if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
+            MarkNuzlockeAreaAsCaught(gMapHeader.mapLayoutId);
+    }
+
     return MON_GIVEN_TO_PARTY;
 }
 
@@ -4726,6 +4837,14 @@ enum Species GetEvolutionTargetSpecies(struct Pokemon *mon, enum EvolutionMode m
      && GetGMaxTargetSpecies(targetSpecies) == targetSpecies)
     {
         return SPECIES_NONE;
+    }
+
+    // Random Evolution mode: evolve into a random valid species (RNG seeded so CHECK_EVO and DO_EVO match)
+    if (targetSpecies != SPECIES_NONE && gSaveBlock2Ptr->randomEvoEnabled)
+    {
+        u32 seed = gSaveBlock2Ptr->encryptionKey + species + level + GetMonData(mon, MON_DATA_PERSONALITY, NULL);
+        SeedRng(seed);
+        targetSpecies = GetRandomValidPokemon();
     }
 
     return targetSpecies;
@@ -6816,6 +6935,21 @@ bool32 IsSpeciesForeignRegionalForm(enum Species species, u32 currentRegion)
 
 enum Type GetTeraTypeFromPersonality(struct Pokemon *mon)
 {
+    // If randomizer mode is enabled, assign a random Tera type
+    if (gSaveBlock2Ptr->randomizerEnabled)
+    {
+        // Use personality for consistent seeding per individual Pokemon
+        u32 personality = GetMonData(mon, MON_DATA_PERSONALITY);
+        u32 species = GetMonData(mon, MON_DATA_SPECIES);
+        
+        // Seed with personality and species for consistency
+        SeedRng(personality + species);
+        
+        // Return random type (0 to 17, excluding TYPE_MYSTERY which is 18)
+        return Random() % (NUMBER_OF_MON_TYPES - 1);
+    }
+    
+    // Original behavior: choose between the Pokemon's two natural types
     const u8 *types = gSpeciesInfo[GetMonData(mon, MON_DATA_SPECIES)].types;
     return (GetMonData(mon, MON_DATA_PERSONALITY) & 0x1) == 0 ? types[0] : types[1];
 }

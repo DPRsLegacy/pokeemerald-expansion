@@ -49,6 +49,41 @@ gText_Birch_YourePlayer::
 	.string "I get it now!\p"
 	.string "$"
 
+gText_Birch_GameModeQuestion::
+	.string "Oh, one more thing!\p"
+	.string "You can customize your adventure\n"
+	.string "with special game modes!\p"
+	.string "Use the D-Pad to navigate,\n"
+	.string "LEFT/RIGHT or A to toggle options,\l"
+	.string "then select START GAME!\p"
+	.string "You can also press START or B\n"
+	.string "at any time to begin your journey!\p"
+	.string "SPECIAL BONUS: Enabling both modes\n"
+	.string "will add infinite RARE CANDIES to\l"
+	.string "your PC storage!\p"
+	.string "$"
+
+gText_Birch_Randomizer::
+	.string "RANDOMIZER$"
+
+gText_Birch_Nuzlocke::
+	.string "NUZLOCKE$"
+
+gText_Birch_SoulLink::
+	.string "SOUL LINK$"
+
+gText_Birch_RandomEvo::
+	.string "RANDOM EVOLUTION$"
+
+gText_Birch_StartGame::
+	.string "START GAME$"
+
+gText_Birch_On::
+	.string "ON$"
+
+gText_Birch_Off::
+	.string "OFF$"
+
 gText_Birch_AreYouReady::
 	.string "All right, are you ready?\p"
 	.string "Your very own adventure is about\n"

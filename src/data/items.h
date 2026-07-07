@@ -192,6 +192,22 @@ const struct ItemInfo gItemsInfo[] =
         .iconPalette = gItemIconPalette_StrangeBall,
     },
 
+    [ITEM_SOUL_LINK_BALL] =
+    {
+        .name = ITEM_NAME("Soul Link Ball"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "For use when your\n"
+            "soul link partner gets\n"
+            "a random shiny encounter."),
+        .pocket = POCKET_POKE_BALLS,
+        .type = ITEM_USE_BAG_MENU,
+        .battleUsage = EFFECT_ITEM_THROW_BALL,
+        .secondaryId = BALL_SOUL_LINK,
+        .iconPic = gItemIcon_SoulLinkBall,
+        .iconPalette = gItemIconPalette_SoulLinkBall,
+    },
+
     [ITEM_POKE_BALL] =
     {
         .name = ITEM_NAME("Poké Ball"),
@@ -15831,6 +15847,25 @@ const struct ItemInfo gItemsInfo[] =
         .fieldUseFunc = ItemUseOutOfBattle_CannotUse,
         .iconPic = gItemIcon_PokeshiDoll,
         .iconPalette = gItemIconPalette_PokeshiDoll,
+    },
+
+    [ITEM_INFINITE_CANDY] =
+    {
+        .name = ITEM_NAME("Infinite Candy"),
+        .pluralName = ITEM_PLURAL_NAME("Infinite Candies"),
+        .price = 50000,
+        .description = COMPOUND_STRING(
+            "Raises the level\n"
+            "of a Pokémon by\n"
+            "one. Never consumed."),
+        .pocket = POCKET_ITEMS,
+        .type = ITEM_USE_PARTY_MENU,
+        .fieldUseFunc = ItemUseOutOfBattle_RareCandy,
+        .effect = gItemEffect_RareCandy,
+        .flingPower = 30,
+        .notConsumed = TRUE,
+        .iconPic = gItemIcon_InfiniteCandy,
+        .iconPalette = gItemIconPalette_InfiniteCandy,
     },
 };
 

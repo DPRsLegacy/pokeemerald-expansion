@@ -82,6 +82,8 @@ gSpecials::
 	def_special BattleSetup_StartRematchBattle, waitstate=1
 	def_special ShowPokemonStorageSystemPC, waitstate=1
 	def_special HasEnoughMonsForDoubleBattle
+	def_special CheckKarrpyWailordStarter
+	def_special CheckIfSelectedMonIsFirstPartyMon
 	def_special TurnOffTVScreen
 	def_special DoTVShow
 	def_special DoPokeNews

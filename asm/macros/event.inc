@@ -1300,6 +1300,12 @@
 	end
 	.endm
 
+	@ Sets a custom price (in Pokedollars) for the next pokemart. Use before pokemart. Pass 0 to use default item prices.
+	.macro setcustommartprice price:req
+	.byte SCR_OP_SETCUSTOMMARTPRICE
+	.2byte \price
+	.endm
+
 	@ Opens the Pokemart system and treats the list of items as decorations.
 	@ Products should be a list of .2byte decoration values preceded by an .align 2
 	.macro pokemartdecoration products:req

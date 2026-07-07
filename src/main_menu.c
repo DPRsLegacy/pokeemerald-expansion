@@ -11,6 +11,7 @@
 #include "gpu_regs.h"
 #include "graphics.h"
 #include "international_string_util.h"
+#include "item.h"
 #include "link.h"
 #include "main.h"
 #include "main_menu.h"
@@ -232,6 +233,10 @@ void CreateYesNoMenuParameterized(u8, u8, u16, u16, u8, u8);
 static void Task_NewGameBirchSpeech_SlidePlatformAway2(u8);
 static void Task_NewGameBirchSpeech_ReshowBirchLotad(u8);
 static void Task_NewGameBirchSpeech_WaitForSpriteFadeInAndTextPrinter(u8);
+static void Task_NewGameBirchSpeech_GameModeMenu(u8);
+static void Task_NewGameBirchSpeech_FadeOutToGameModeScreen(u8);
+static void CB2_InitGameModeSelectMenu(void);
+static void CB2_NewGameBirchSpeech_ResumeAfterGameMode(void);
 static void Task_NewGameBirchSpeech_AreYouReady(u8);
 static void Task_NewGameBirchSpeech_ShrinkPlayer(u8);
 static void SpriteCB_MovePlayerDownWhileShrinking(struct Sprite *);
@@ -1728,8 +1733,54 @@ static void Task_NewGameBirchSpeech_WaitForSpriteFadeInAndTextPrinter(u8 taskId)
             NewGameBirchSpeech_StartFadeOutTarget1InTarget2(taskId, 2);
             NewGameBirchSpeech_StartFadePlatformIn(taskId, 1);
             gTasks[taskId].tTimer = 64;
-            gTasks[taskId].func = Task_NewGameBirchSpeech_AreYouReady;
+            gTasks[taskId].func = Task_NewGameBirchSpeech_GameModeMenu;
         }
+    }
+}
+
+static void Task_NewGameBirchSpeech_FadeOutToGameModeScreen(u8 taskId);
+
+static void Task_NewGameBirchSpeech_GameModeMenu(u8 taskId)
+{
+    u8 spriteId;
+
+    if (gTasks[taskId].tIsDoneFadingSprites)
+    {
+        gSprites[gTasks[taskId].tBirchSpriteId].invisible = TRUE;
+        gSprites[gTasks[taskId].tLotadSpriteId].invisible = TRUE;
+        if (gTasks[taskId].tTimer)
+        {
+            gTasks[taskId].tTimer--;
+            return;
+        }
+        if (gSaveBlock2Ptr->playerGender != MALE)
+            spriteId = gTasks[taskId].tMaySpriteId;
+        else
+            spriteId = gTasks[taskId].tBrendanSpriteId;
+        gSprites[spriteId].x = 120;
+        gSprites[spriteId].y = 60;
+        gSprites[spriteId].invisible = FALSE;
+        gSprites[spriteId].oam.objMode = ST_OAM_OBJ_BLEND;
+        gTasks[taskId].tPlayerSpriteId = spriteId;
+        NewGameBirchSpeech_StartFadeInTarget1OutTarget2(taskId, 2);
+        NewGameBirchSpeech_StartFadePlatformOut(taskId, 1);
+        gSaveBlock2Ptr->randomizerEnabled = FALSE;
+        gSaveBlock2Ptr->nuzlockeEnabled = FALSE;
+        gSaveBlock2Ptr->soulLinkEnabled = FALSE;
+        gSaveBlock2Ptr->randomEvoEnabled = FALSE;
+        BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
+        gTasks[taskId].func = Task_NewGameBirchSpeech_FadeOutToGameModeScreen;
+    }
+}
+
+static void Task_NewGameBirchSpeech_FadeOutToGameModeScreen(u8 taskId)
+{
+    if (!gPaletteFade.active)
+    {
+        gMain.state = 0;
+        gMain.savedCallback = CB2_NewGameBirchSpeech_ResumeAfterGameMode;
+        SetMainCallback2(CB2_InitGameModeSelectMenu);
+        DestroyTask(taskId);
     }
 }
 
@@ -1817,6 +1868,331 @@ static void Task_NewGameBirchSpeech_Cleanup(u8 taskId)
         SetMainCallback2(CB2_NewGame);
         DestroyTask(taskId);
     }
+}
+
+// ----------------
+// Game Mode Select (full-screen, like Options menu). Used when intro pauses for game mode choice.
+// ----------------
+#define GAMEMODE_MENUITEM_RANDOMIZER  0
+#define GAMEMODE_MENUITEM_NUZLOCKE    1
+#define GAMEMODE_MENUITEM_SOUL_LINK   2
+#define GAMEMODE_MENUITEM_RANDOM_EVO  3
+#define GAMEMODE_MENUITEM_START       4
+#define GAMEMODE_MENUITEM_COUNT       5
+
+#define GAMEMODE_WIN_HEADER   0
+#define GAMEMODE_WIN_OPTIONS  1
+
+static const struct WindowTemplate sGameModeSelectWinTemplates[] =
+{
+    [GAMEMODE_WIN_HEADER] = {
+        .bg = 1,
+        .tilemapLeft = 2,
+        .tilemapTop = 1,
+        .width = 26,
+        .height = 2,
+        .paletteNum = 1,
+        .baseBlock = 2
+    },
+    [GAMEMODE_WIN_OPTIONS] = {
+        .bg = 0,
+        .tilemapLeft = 2,
+        .tilemapTop = 5,
+        .width = 26,
+        .height = 10,
+        .paletteNum = 1,
+        .baseBlock = 0x36
+    },
+    DUMMY_WIN_TEMPLATE
+};
+
+static const struct BgTemplate sGameModeSelectBgTemplates[] =
+{
+    { .bg = 1, .charBaseIndex = 1, .mapBaseIndex = 30, .screenSize = 0, .paletteMode = 0, .priority = 0, .baseTile = 0 },
+    { .bg = 0, .charBaseIndex = 1, .mapBaseIndex = 31, .screenSize = 0, .paletteMode = 0, .priority = 1, .baseTile = 0 }
+};
+
+static const u16 sGameModeSelectBg_Pal[] = {RGB(0, 0, 0)};
+static const u16 sGameModeSelectWindowWhite[] = {RGB(31, 31, 31)};
+
+static void GameModeSelect_DrawMenu(u8 taskId);
+static void Task_GameModeSelectFadeOut(u8 taskId);
+
+static void CB2_GameModeSelectMain(void)
+{
+    RunTasks();
+    AnimateSprites();
+    BuildOamBuffer();
+    UpdatePaletteFade();
+}
+
+static void VBlankCB_GameModeSelect(void)
+{
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
+}
+
+static void Task_GameModeSelectProcessInput(u8 taskId)
+{
+    s16 *selection = &gTasks[taskId].data[0];
+
+    if (JOY_NEW(DPAD_UP))
+    {
+        PlaySE(SE_SELECT);
+        *selection = (*selection + GAMEMODE_MENUITEM_COUNT - 1) % GAMEMODE_MENUITEM_COUNT;
+        GameModeSelect_DrawMenu(taskId);
+    }
+    else if (JOY_NEW(DPAD_DOWN))
+    {
+        PlaySE(SE_SELECT);
+        *selection = (*selection + 1) % GAMEMODE_MENUITEM_COUNT;
+        GameModeSelect_DrawMenu(taskId);
+    }
+    else if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
+    {
+        PlaySE(SE_SELECT);
+        if (*selection == GAMEMODE_MENUITEM_RANDOMIZER)
+            gSaveBlock2Ptr->randomizerEnabled = !gSaveBlock2Ptr->randomizerEnabled;
+        else if (*selection == GAMEMODE_MENUITEM_NUZLOCKE)
+            gSaveBlock2Ptr->nuzlockeEnabled = !gSaveBlock2Ptr->nuzlockeEnabled;
+        else if (*selection == GAMEMODE_MENUITEM_SOUL_LINK)
+            gSaveBlock2Ptr->soulLinkEnabled = !gSaveBlock2Ptr->soulLinkEnabled;
+        else if (*selection == GAMEMODE_MENUITEM_RANDOM_EVO)
+            gSaveBlock2Ptr->randomEvoEnabled = !gSaveBlock2Ptr->randomEvoEnabled;
+        else if (*selection == GAMEMODE_MENUITEM_START)
+        {
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
+            gTasks[taskId].func = Task_GameModeSelectFadeOut;
+            return;
+        }
+        GameModeSelect_DrawMenu(taskId);
+    }
+    else if (JOY_NEW(A_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        if (*selection == GAMEMODE_MENUITEM_START)
+        {
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
+            gTasks[taskId].func = Task_GameModeSelectFadeOut;
+        }
+        else
+        {
+            if (*selection == GAMEMODE_MENUITEM_RANDOMIZER)
+                gSaveBlock2Ptr->randomizerEnabled = !gSaveBlock2Ptr->randomizerEnabled;
+            else if (*selection == GAMEMODE_MENUITEM_NUZLOCKE)
+                gSaveBlock2Ptr->nuzlockeEnabled = !gSaveBlock2Ptr->nuzlockeEnabled;
+            else if (*selection == GAMEMODE_MENUITEM_SOUL_LINK)
+                gSaveBlock2Ptr->soulLinkEnabled = !gSaveBlock2Ptr->soulLinkEnabled;
+            else
+                gSaveBlock2Ptr->randomEvoEnabled = !gSaveBlock2Ptr->randomEvoEnabled;
+            GameModeSelect_DrawMenu(taskId);
+        }
+    }
+    else if (JOY_NEW(B_BUTTON) || JOY_NEW(START_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
+        gTasks[taskId].func = Task_GameModeSelectFadeOut;
+    }
+}
+
+static void Task_GameModeSelectFadeOut(u8 taskId)
+{
+    if (!gPaletteFade.active)
+    {
+        DestroyTask(taskId);
+        FreeAllWindowBuffers();
+        SetMainCallback2(gMain.savedCallback);
+    }
+}
+
+static void GameModeSelect_DrawMenu(u8 taskId)
+{
+    u8 selection = gTasks[taskId].data[0];
+    const u8 *randomizerText = gSaveBlock2Ptr->randomizerEnabled ? gText_Birch_On : gText_Birch_Off;
+    const u8 *nuzlockeText = gSaveBlock2Ptr->nuzlockeEnabled ? gText_Birch_On : gText_Birch_Off;
+    const u8 *soulLinkText = gSaveBlock2Ptr->soulLinkEnabled ? gText_Birch_On : gText_Birch_Off;
+    const u8 *randomEvoText = gSaveBlock2Ptr->randomEvoEnabled ? gText_Birch_On : gText_Birch_Off;
+
+    FillWindowPixelBuffer(GAMEMODE_WIN_OPTIONS, PIXEL_FILL(1));
+    AddTextPrinterParameterized(GAMEMODE_WIN_OPTIONS, FONT_NORMAL, gText_SelectorArrow2, 0, 1 + selection * 16, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(GAMEMODE_WIN_OPTIONS, FONT_NORMAL, gText_Birch_Randomizer, 8, 1, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(GAMEMODE_WIN_OPTIONS, FONT_NORMAL, randomizerText, 168, 1, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(GAMEMODE_WIN_OPTIONS, FONT_NORMAL, gText_Birch_Nuzlocke, 8, 17, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(GAMEMODE_WIN_OPTIONS, FONT_NORMAL, nuzlockeText, 168, 17, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(GAMEMODE_WIN_OPTIONS, FONT_NORMAL, gText_Birch_SoulLink, 8, 33, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(GAMEMODE_WIN_OPTIONS, FONT_NORMAL, soulLinkText, 168, 33, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(GAMEMODE_WIN_OPTIONS, FONT_NORMAL, gText_Birch_RandomEvo, 8, 49, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(GAMEMODE_WIN_OPTIONS, FONT_NORMAL, randomEvoText, 168, 49, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(GAMEMODE_WIN_OPTIONS, FONT_NORMAL, gText_Birch_StartGame, 8, 65, TEXT_SKIP_DRAW, NULL);
+    CopyWindowToVram(GAMEMODE_WIN_OPTIONS, COPYWIN_GFX);
+}
+
+static const u8 sGameModeSelectHeader[] = _("GAME MODE");
+
+void CB2_InitGameModeSelectMenu(void)
+{
+    switch (gMain.state)
+    {
+    default:
+    case 0:
+        SetVBlankCallback(NULL);
+        gMain.state++;
+        break;
+    case 1:
+        DmaClearLarge16(3, (void *)(VRAM), VRAM_SIZE, 0x1000);
+        DmaClear32(3, OAM, OAM_SIZE);
+        DmaClear16(3, PLTT, PLTT_SIZE);
+        SetGpuReg(REG_OFFSET_DISPCNT, 0);
+        ResetBgsAndClearDma3BusyFlags(0);
+        InitBgsFromTemplates(0, sGameModeSelectBgTemplates, ARRAY_COUNT(sGameModeSelectBgTemplates));
+        ChangeBgX(0, 0, BG_COORD_SET);
+        ChangeBgY(0, 0, BG_COORD_SET);
+        ChangeBgX(1, 0, BG_COORD_SET);
+        ChangeBgY(1, 0, BG_COORD_SET);
+        InitWindows(sGameModeSelectWinTemplates);
+        DeactivateAllTextPrinters();
+        SetGpuReg(REG_OFFSET_WIN0H, 0);
+        SetGpuReg(REG_OFFSET_WIN0V, 0);
+        SetGpuReg(REG_OFFSET_WININ, WININ_WIN0_BG0);
+        SetGpuReg(REG_OFFSET_WINOUT, WINOUT_WIN01_BG0 | WINOUT_WIN01_BG1 | WINOUT_WIN01_CLR);
+        SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_BG0 | BLDCNT_EFFECT_DARKEN);
+        SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+        SetGpuReg(REG_OFFSET_BLDY, 4);
+        SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON | DISPCNT_OBJ_ON | DISPCNT_OBJ_1D_MAP);
+        ShowBg(0);
+        ShowBg(1);
+        gMain.state++;
+        break;
+    case 2:
+        ResetPaletteFade();
+        ScanlineEffect_Stop();
+        ResetTasks();
+        ResetSpriteData();
+        gMain.state++;
+        break;
+    case 3:
+        LoadBgTiles(0, GetWindowFrameTilesPal(gSaveBlock2Ptr->optionsWindowFrameType)->tiles, 0x120, STD_WINDOW_BASE_TILE_NUM);
+        LoadBgTiles(1, GetWindowFrameTilesPal(gSaveBlock2Ptr->optionsWindowFrameType)->tiles, 0x120, STD_WINDOW_BASE_TILE_NUM);
+        gMain.state++;
+        break;
+    case 4:
+        LoadPalette(sGameModeSelectBg_Pal, BG_PLTT_ID(0), sizeof(sGameModeSelectBg_Pal));
+        LoadPalette(GetWindowFrameTilesPal(gSaveBlock2Ptr->optionsWindowFrameType)->pal, BG_PLTT_ID(STD_WINDOW_PALETTE_NUM), PLTT_SIZE_4BPP);
+        gMain.state++;
+        break;
+    case 5:
+        LoadPalette(sMainMenuTextPal, BG_PLTT_ID(1), PLTT_SIZE_4BPP);
+        LoadPalette(sGameModeSelectWindowWhite, BG_PLTT_ID(1) + 1, PLTT_SIZEOF(1));
+        gMain.state++;
+        break;
+    case 6:
+        PutWindowTilemap(GAMEMODE_WIN_HEADER);
+        DrawStdWindowFrame(GAMEMODE_WIN_HEADER, FALSE);
+        AddTextPrinterParameterized(GAMEMODE_WIN_HEADER, FONT_NORMAL, sGameModeSelectHeader, 8, 1, TEXT_SKIP_DRAW, NULL);
+        CopyWindowToVram(GAMEMODE_WIN_HEADER, COPYWIN_FULL);
+        gMain.state++;
+        break;
+    case 7:
+        PutWindowTilemap(GAMEMODE_WIN_OPTIONS);
+        DrawStdWindowFrame(GAMEMODE_WIN_OPTIONS, FALSE);
+        gMain.state++;
+        break;
+    case 8:
+    {
+        u8 taskId = CreateTask(Task_GameModeSelectProcessInput, 0);
+        gTasks[taskId].data[0] = 0;
+        GameModeSelect_DrawMenu(taskId);
+        CopyWindowToVram(GAMEMODE_WIN_OPTIONS, COPYWIN_FULL);
+        gMain.state++;
+        break;
+    }
+    case 9:
+        BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_BLACK);
+        SetVBlankCallback(VBlankCB_GameModeSelect);
+        SetMainCallback2(CB2_GameModeSelectMain);
+        return;
+    }
+}
+
+// Re-inits the birch intro scene and continues from "Are you ready?" (after game mode was chosen on full screen).
+void CB2_NewGameBirchSpeech_ResumeAfterGameMode(void)
+{
+    u8 taskId;
+    u8 spriteId;
+    u16 savedIme;
+
+    ResetBgsAndClearDma3BusyFlags(0);
+    SetGpuReg(REG_OFFSET_DISPCNT, 0);
+    SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_OBJ_ON | DISPCNT_OBJ_1D_MAP);
+    InitBgsFromTemplates(0, sMainMenuBgTemplates, ARRAY_COUNT(sMainMenuBgTemplates));
+    InitBgFromTemplate(&sBirchBgTemplate);
+    SetVBlankCallback(NULL);
+    SetGpuReg(REG_OFFSET_BG2CNT, 0);
+    SetGpuReg(REG_OFFSET_BG1CNT, 0);
+    SetGpuReg(REG_OFFSET_BG0CNT, 0);
+    SetGpuReg(REG_OFFSET_BG2HOFS, 0);
+    SetGpuReg(REG_OFFSET_BG2VOFS, 0);
+    SetGpuReg(REG_OFFSET_BG1HOFS, 0);
+    SetGpuReg(REG_OFFSET_BG1VOFS, 0);
+    SetGpuReg(REG_OFFSET_BG0HOFS, 0);
+    SetGpuReg(REG_OFFSET_BG0VOFS, 0);
+    DmaFill16(3, 0, VRAM, VRAM_SIZE);
+    DmaFill32(3, 0, OAM, OAM_SIZE);
+    DmaFill16(3, 0, PLTT, PLTT_SIZE);
+    ResetPaletteFade();
+    DecompressDataWithHeaderVram(sBirchSpeechShadowGfx, (u8 *)VRAM);
+    DecompressDataWithHeaderVram(sBirchSpeechBgMap, (u8 *)(BG_SCREEN_ADDR(7)));
+    LoadPalette(sBirchSpeechBgPals, BG_PLTT_ID(0), 2 * PLTT_SIZE_4BPP);
+    LoadPalette(&sBirchSpeechBgGradientPal[1], BG_PLTT_ID(0) + 1, PLTT_SIZEOF(8));
+    ResetTasks();
+    taskId = CreateTask(Task_NewGameBirchSpeech_AreYouReady, 0);
+    ScanlineEffect_Stop();
+    ResetSpriteData();
+    FreeAllSpritePalettes();
+    ResetAllPicSprites();
+    AddBirchSpeechObjects(taskId);
+    if (gSaveBlock2Ptr->playerGender != MALE)
+    {
+        gTasks[taskId].tPlayerGender = FEMALE;
+        spriteId = gTasks[taskId].tMaySpriteId;
+    }
+    else
+    {
+        gTasks[taskId].tPlayerGender = MALE;
+        spriteId = gTasks[taskId].tBrendanSpriteId;
+    }
+    gSprites[gTasks[taskId].tBirchSpriteId].invisible = TRUE;
+    gSprites[gTasks[taskId].tLotadSpriteId].invisible = TRUE;
+    gSprites[spriteId].x = 120;
+    gSprites[spriteId].y = 60;
+    gSprites[spriteId].invisible = FALSE;
+    gSprites[spriteId].oam.objMode = ST_OAM_OBJ_BLEND;
+    gTasks[taskId].tPlayerSpriteId = spriteId;
+    gTasks[taskId].tIsDoneFadingSprites = TRUE;
+    gTasks[taskId].tTimer = 0;
+    SetGpuReg(REG_OFFSET_BG1HOFS, 0);
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_BLACK);
+    SetGpuReg(REG_OFFSET_WIN0H, 0);
+    SetGpuReg(REG_OFFSET_WIN0V, 0);
+    SetGpuReg(REG_OFFSET_WININ, 0);
+    SetGpuReg(REG_OFFSET_WINOUT, 0);
+    SetGpuReg(REG_OFFSET_BLDCNT, 0);
+    SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+    SetGpuReg(REG_OFFSET_BLDY, 0);
+    ShowBg(0);
+    ShowBg(1);
+    savedIme = REG_IME;
+    REG_IME = 0;
+    REG_IE |= 1;
+    REG_IME = savedIme;
+    SetVBlankCallback(VBlankCB_MainMenu);
+    SetMainCallback2(CB2_MainMenu);
+    InitWindows(sNewGameBirchSpeechTextWindows);
+    LoadMainMenuWindowFrameTiles(0, 0xF3);
+    LoadMessageBoxGfx(0, BIRCH_DLG_BASE_TILE_NUM, BG_PLTT_ID(15));
+    DrawDialogFrameWithCustomTile(0, TRUE, BIRCH_DLG_BASE_TILE_NUM);
 }
 
 static void CB2_NewGameBirchSpeech_ReturnFromNamingScreen(void)

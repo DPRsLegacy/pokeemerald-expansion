@@ -89,6 +89,9 @@ const u16 gItemIconPalette_BeastBall[] = INCGFX_U16("graphics/items/icon_palette
 const u32 gItemIcon_CherishBall[] = INCGFX_U32("graphics/items/icons/cherish_ball.png", ".4bpp.smol");
 const u16 gItemIconPalette_CherishBall[] = INCGFX_U16("graphics/items/icon_palettes/cherish_ball.pal", ".gbapal");
 
+const u32 gItemIcon_SoulLinkBall[] = INCBIN_U32("graphics/items/icons/soul_link_ball.4bpp.smol");
+const u16 gItemIconPalette_SoulLinkBall[] = INCBIN_U16("graphics/items/icon_palettes/soul_link_ball.gbapal");
+
 // Medicine
 
 const u32 gItemIcon_Potion[] = INCGFX_U32("graphics/items/icons/potion.png", ".4bpp.smol");
@@ -245,6 +248,9 @@ const u16 gItemIconPalette_YellowMint[] = INCGFX_U16("graphics/items/icon_palett
 
 const u32 gItemIcon_RareCandy[] = INCGFX_U32("graphics/items/icons/rare_candy.png", ".4bpp.smol");
 const u16 gItemIconPalette_RareCandy[] = INCGFX_U16("graphics/items/icon_palettes/rare_candy.pal", ".gbapal");
+
+const u32 gItemIcon_InfiniteCandy[] = INCGFX_U32("graphics/items/icons/infinite_candy.png", ".4bpp.smol");
+const u16 gItemIconPalette_InfiniteCandy[] = INCGFX_U16("graphics/items/icon_palettes/infinite_candy.pal", ".gbapal");
 
 const u32 gItemIcon_ExpCandyXS[] = INCGFX_U32("graphics/items/icons/exp_candy_xs.png", ".4bpp.smol");
 const u32 gItemIcon_ExpCandyS[] = INCGFX_U32("graphics/items/icons/exp_candy_s.png", ".4bpp.smol");

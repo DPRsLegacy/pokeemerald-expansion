@@ -21,6 +21,8 @@
 #include "constants/flags.h"
 #include "constants/items.h"
 #include "constants/moves.h"
+#include "constants/trainers.h"
+#include "battle_setup.h"
 
 static enum MaxPowerTier GetMaxPowerTier(enum Move move);
 
@@ -87,6 +89,28 @@ bool32 CanDynamax(enum BattlerId battler)
             return FALSE;
         if (B_FLAG_DYNAMAX_BATTLE == 0 || (B_FLAG_DYNAMAX_BATTLE != 0 && !FlagGet(B_FLAG_DYNAMAX_BATTLE)))
             return FALSE;
+            
+        // Restrict Dynamax to only gyms and major story battles
+        if (gBattleTypeFlags & BATTLE_TYPE_TRAINER)
+        {
+            u32 trainerClass = GetTrainerClassFromId(TRAINER_BATTLE_PARAM.opponentA);
+            
+            // Allow in gym battles, Elite Four, Champion, and major story battles
+            if (!(trainerClass == TRAINER_CLASS_LEADER ||        // Gym Leaders
+                  trainerClass == TRAINER_CLASS_ELITE_FOUR ||    // Elite Four
+                  trainerClass == TRAINER_CLASS_CHAMPION ||      // Champion
+                  trainerClass == TRAINER_CLASS_RIVAL ||         // Rival battles
+                  trainerClass == TRAINER_CLASS_AQUA_LEADER ||   // Archie
+                  trainerClass == TRAINER_CLASS_MAGMA_LEADER))   // Maxie
+            {
+                return FALSE;
+            }
+        }
+        else
+        {
+            // Don't allow Dynamax in wild battles
+            return FALSE;
+        }
     }
 
     // Check if species isn't allowed to Dynamax.
@@ -104,7 +128,8 @@ bool32 CanDynamax(enum BattlerId battler)
         return FALSE;
 
     // Check if battler has another gimmick active.
-    if (GetActiveGimmick(battler) != GIMMICK_NONE)
+    // Allow Dynamax with Terastallization, but not with other gimmicks
+    if (GetActiveGimmick(battler) != GIMMICK_NONE && GetActiveGimmick(battler) != GIMMICK_TERA)
         return FALSE;
 
     // Check if battler is holding a Z-Crystal or Mega Stone.

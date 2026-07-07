@@ -8,6 +8,7 @@
 #include "task.h"
 #include "safari_zone.h"
 #include "script.h"
+#include "constants/characters.h"
 #include "event_data.h"
 #include "metatile_behavior.h"
 #include "field_player_avatar.h"
@@ -53,6 +54,7 @@
 #include "constants/items.h"
 #include "constants/songs.h"
 #include "constants/trainers.h"
+#include "difficulty.h"
 #include "constants/trainer_hill.h"
 #include "constants/weather.h"
 #include "fishing.h"
@@ -958,6 +960,8 @@ void ChooseStarter(void)
     gMain.savedCallback = CB2_GiveStarter;
 }
 
+
+
 static void CB2_GiveStarter(void)
 {
     u16 starterMon;
@@ -1301,6 +1305,16 @@ void ClearTrainerFlag(u16 trainerId)
 
 void BattleSetup_StartTrainerBattle(void)
 {
+    // Enable enhanced difficulty for major battles
+    if (IsMajorBattle(TRAINER_BATTLE_PARAM.opponentA))
+    {
+        EnableEnhancedDifficultyForBattle(TRAINER_BATTLE_PARAM.opponentA);
+        
+        // Initialize Terastallization usage tracking for the new battle
+        if (gBattleStruct)
+            gBattleStruct->teraUsedInBattle = FALSE;
+    }
+    
     if (gNoOfApproachingTrainers == 2)
     {
         if (FollowerNPCIsBattlePartner())
