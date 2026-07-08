@@ -7,6 +7,12 @@
 
 ## 🚀 **What's New (Latest Update)**
 
+### 🔄 **Rebased onto Latest RHH Master (July 2026)**
+- **Upstream sync** – Custom features are now built on top of the latest [rh-hideout/pokeemerald-expansion](https://github.com/rh-hideout/pokeemerald-expansion) `master` (includes Gen VII/VIII animation updates, official difficulty system, and 1100+ upstream commits since the original fork).
+- **Single squashed commit** – All romhack changes (randomizer, nuzlocke, soul link, random evolution, scaled difficulty, custom items, Petalburg vendor) are consolidated into one commit on upstream for easier future rebases.
+- **Item IDs updated** – `ITEM_SOUL_LINK_BALL` and `ITEM_INFINITE_CANDY` are assigned after upstream’s latest item table entries (IDs 874–875). Old saves from pre-rebase builds are **not compatible**.
+- **Integration fixes** – Soul Link Ball uses upstream `constants/pokeball.h` + `gPokeBalls[]`; capture rate handled in `ComputeBallData`; eevee mom trades use upstream `InGameTradeID` enum; custom mart script opcode coexists with upstream `getbraillestringwidth`.
+
 ### 🎛️ **Latest Update: Petalburg Mart Evolution Seller & Custom Mart Prices**
 - **Evolution stone/item seller in Petalburg Poké Mart** – A scientist NPC in the Petalburg Mart sells evolution stones and evolution items. All items are **¥250** each. Includes: Fire, Water, Thunder, Leaf, Ice, Sun, Moon, Shiny, Dusk, Dawn Stone; Oval Stone, Everstone; Dragon Scale, Upgrade, Protector, Electirizer, Magmarizer, Dubious Disc, Reaper Cloth, Prism Scale, Whipped Dream, Sachet; King's Rock, Metal Coat; Deep Sea Scale, Deep Sea Tooth; Sweet/Tart Apple, Cracked/Chipped Pot; Galarica Cuff, Galarica Wreath.
 - **Custom mart price script command** – New script command **`setcustommartprice <price>`** sets the price in Pokedollars for the next **`pokemart`** (e.g. `setcustommartprice 250`). Use before `pokemart` in any map script; use `setcustommartprice 0` to revert to default item prices. The custom price is cleared when the shop is closed.
@@ -158,6 +164,7 @@ The gym battles, Elite Four, and Champion are now **significantly more challengi
 ## 🛠️ **Technical Improvements**
 
 ### **Recent Fixes (Latest Update)**
+✅ **Rebased and builds cleanly on latest RHH master**  
 ✅ **System fully tested and operational**  
 ✅ **Memory-efficient battle tracking**  
 ✅ **Proper header organization**  
@@ -208,5 +215,5 @@ The gym battles, Elite Four, and Champion are now **significantly more challengi
 
 ---
 
-*Last Updated: Latest build*  
-*All features are production-ready and enhance the core Pokémon Emerald experience while maintaining game balance and stability.*
+*Last Updated: July 7, 2026 — rebased onto RHH master*  
+*All features are production-ready and enhance the core Pokémon Emerald experience while maintaining game balance and stability. Saves from builds prior to this rebase will not load.*
