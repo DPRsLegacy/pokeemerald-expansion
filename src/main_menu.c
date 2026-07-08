@@ -1768,6 +1768,7 @@ static void Task_NewGameBirchSpeech_GameModeMenu(u8 taskId)
         gSaveBlock2Ptr->nuzlockeEnabled = FALSE;
         gSaveBlock2Ptr->soulLinkEnabled = FALSE;
         gSaveBlock2Ptr->randomEvoEnabled = FALSE;
+        gSaveBlock2Ptr->followPokemonEnabled = FALSE;
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
         gTasks[taskId].func = Task_NewGameBirchSpeech_FadeOutToGameModeScreen;
     }
@@ -1873,12 +1874,13 @@ static void Task_NewGameBirchSpeech_Cleanup(u8 taskId)
 // ----------------
 // Game Mode Select (full-screen, like Options menu). Used when intro pauses for game mode choice.
 // ----------------
-#define GAMEMODE_MENUITEM_RANDOMIZER  0
-#define GAMEMODE_MENUITEM_NUZLOCKE    1
-#define GAMEMODE_MENUITEM_SOUL_LINK   2
-#define GAMEMODE_MENUITEM_RANDOM_EVO  3
-#define GAMEMODE_MENUITEM_START       4
-#define GAMEMODE_MENUITEM_COUNT       5
+#define GAMEMODE_MENUITEM_RANDOMIZER     0
+#define GAMEMODE_MENUITEM_NUZLOCKE       1
+#define GAMEMODE_MENUITEM_SOUL_LINK      2
+#define GAMEMODE_MENUITEM_RANDOM_EVO     3
+#define GAMEMODE_MENUITEM_FOLLOW_POKEMON 4
+#define GAMEMODE_MENUITEM_START          5
+#define GAMEMODE_MENUITEM_COUNT          6
 
 #define GAMEMODE_WIN_HEADER   0
 #define GAMEMODE_WIN_OPTIONS  1
@@ -1899,7 +1901,7 @@ static const struct WindowTemplate sGameModeSelectWinTemplates[] =
         .tilemapLeft = 2,
         .tilemapTop = 5,
         .width = 26,
-        .height = 10,
+        .height = 12,
         .paletteNum = 1,
         .baseBlock = 0x36
     },
@@ -1960,6 +1962,8 @@ static void Task_GameModeSelectProcessInput(u8 taskId)
             gSaveBlock2Ptr->soulLinkEnabled = !gSaveBlock2Ptr->soulLinkEnabled;
         else if (*selection == GAMEMODE_MENUITEM_RANDOM_EVO)
             gSaveBlock2Ptr->randomEvoEnabled = !gSaveBlock2Ptr->randomEvoEnabled;
+        else if (*selection == GAMEMODE_MENUITEM_FOLLOW_POKEMON)
+            gSaveBlock2Ptr->followPokemonEnabled = !gSaveBlock2Ptr->followPokemonEnabled;
         else if (*selection == GAMEMODE_MENUITEM_START)
         {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
@@ -1984,8 +1988,10 @@ static void Task_GameModeSelectProcessInput(u8 taskId)
                 gSaveBlock2Ptr->nuzlockeEnabled = !gSaveBlock2Ptr->nuzlockeEnabled;
             else if (*selection == GAMEMODE_MENUITEM_SOUL_LINK)
                 gSaveBlock2Ptr->soulLinkEnabled = !gSaveBlock2Ptr->soulLinkEnabled;
-            else
+            else if (*selection == GAMEMODE_MENUITEM_RANDOM_EVO)
                 gSaveBlock2Ptr->randomEvoEnabled = !gSaveBlock2Ptr->randomEvoEnabled;
+            else
+                gSaveBlock2Ptr->followPokemonEnabled = !gSaveBlock2Ptr->followPokemonEnabled;
             GameModeSelect_DrawMenu(taskId);
         }
     }
@@ -2014,6 +2020,7 @@ static void GameModeSelect_DrawMenu(u8 taskId)
     const u8 *nuzlockeText = gSaveBlock2Ptr->nuzlockeEnabled ? gText_Birch_On : gText_Birch_Off;
     const u8 *soulLinkText = gSaveBlock2Ptr->soulLinkEnabled ? gText_Birch_On : gText_Birch_Off;
     const u8 *randomEvoText = gSaveBlock2Ptr->randomEvoEnabled ? gText_Birch_On : gText_Birch_Off;
+    const u8 *followPokemonText = gSaveBlock2Ptr->followPokemonEnabled ? gText_Birch_On : gText_Birch_Off;
 
     FillWindowPixelBuffer(GAMEMODE_WIN_OPTIONS, PIXEL_FILL(1));
     AddTextPrinterParameterized(GAMEMODE_WIN_OPTIONS, FONT_NORMAL, gText_SelectorArrow2, 0, 1 + selection * 16, TEXT_SKIP_DRAW, NULL);
@@ -2025,7 +2032,9 @@ static void GameModeSelect_DrawMenu(u8 taskId)
     AddTextPrinterParameterized(GAMEMODE_WIN_OPTIONS, FONT_NORMAL, soulLinkText, 168, 33, TEXT_SKIP_DRAW, NULL);
     AddTextPrinterParameterized(GAMEMODE_WIN_OPTIONS, FONT_NORMAL, gText_Birch_RandomEvo, 8, 49, TEXT_SKIP_DRAW, NULL);
     AddTextPrinterParameterized(GAMEMODE_WIN_OPTIONS, FONT_NORMAL, randomEvoText, 168, 49, TEXT_SKIP_DRAW, NULL);
-    AddTextPrinterParameterized(GAMEMODE_WIN_OPTIONS, FONT_NORMAL, gText_Birch_StartGame, 8, 65, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(GAMEMODE_WIN_OPTIONS, FONT_NORMAL, gText_Birch_FollowPokemon, 8, 65, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(GAMEMODE_WIN_OPTIONS, FONT_NORMAL, followPokemonText, 168, 65, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(GAMEMODE_WIN_OPTIONS, FONT_NORMAL, gText_Birch_StartGame, 8, 81, TEXT_SKIP_DRAW, NULL);
     CopyWindowToVram(GAMEMODE_WIN_OPTIONS, COPYWIN_GFX);
 }
 

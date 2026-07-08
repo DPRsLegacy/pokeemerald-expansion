@@ -605,7 +605,7 @@ struct SaveBlock2
              u16 nuzlockeEnabled:1; // whether nuzlocke mode is active
              u16 soulLinkEnabled:1; // whether soul link mode is active (bypass nuzlocke per-route, 30 Soul Link Balls in PC)
              u16 randomEvoEnabled:1; // whether random evolution mode is active (evolve into random species)
-             //u16 padding1:1;
+             u16 followPokemonEnabled:1; // whether follower Pokémon is enabled
              //u16 padding2;
     /*0x18*/ struct Pokedex pokedex;
     /*0x90*/ u8 filler_90[0x8];

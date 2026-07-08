@@ -214,6 +214,7 @@ extern const u8 gText_Birch_Randomizer[];
 extern const u8 gText_Birch_Nuzlocke[];
 extern const u8 gText_Birch_SoulLink[];
 extern const u8 gText_Birch_RandomEvo[];
+extern const u8 gText_Birch_FollowPokemon[];
 extern const u8 gText_Birch_StartGame[];
 extern const u8 gText_Birch_On[];
 extern const u8 gText_Birch_Off[];

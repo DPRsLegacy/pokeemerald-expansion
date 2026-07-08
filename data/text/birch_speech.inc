@@ -75,6 +75,9 @@ gText_Birch_SoulLink::
 gText_Birch_RandomEvo::
 	.string "RANDOM EVOLUTION$"
 
+gText_Birch_FollowPokemon::
+	.string "FOLLOW POKÉMON$"
+
 gText_Birch_StartGame::
 	.string "START GAME$"
 

@@ -7,6 +7,12 @@
 
 ## 🚀 **What's New (Latest Update)**
 
+### 🎛️ **Follow Pokémon on Game Mode Menu**
+- **Follow Pokémon toggle** – New optional setting on the intro **Game Mode** screen. When ON, your first conscious party Pokémon follows you in the overworld (HGSS-style).
+- **Independent toggle** – Works like Randomizer, Nuzlocke, Soul Link, and Random Evolution; not tied to Nuzlocke mode.
+- **Default OFF** – Follow Pokémon is disabled unless you turn it ON before **Start Game**. Old saves default to OFF.
+- **Follower system enabled** – Compile-time follower support (`OW_FOLLOWERS_ENABLED`) is now ON; spawn is gated at runtime by your Game Mode choice.
+
 ### 🔄 **Rebased onto Latest RHH Master (July 2026)**
 - **Upstream sync** – Custom features are now built on top of the latest [rh-hideout/pokeemerald-expansion](https://github.com/rh-hideout/pokeemerald-expansion) `master` (includes Gen VII/VIII animation updates, official difficulty system, and 1100+ upstream commits since the original fork).
 - **Single squashed commit** – All romhack changes (randomizer, nuzlocke, soul link, random evolution, scaled difficulty, custom items, Petalburg vendor) are consolidated into one commit on upstream for easier future rebases.
@@ -24,9 +30,10 @@
 - **Soul Link Ball icon** – Item uses Link ball graphics in battle/party; in PC/bag it uses a dedicated Soul Link icon when built from the 32×32 asset, with a safe fallback to avoid crashes.
 
 ### 🎛️ **Game Mode Selection Menu (New Game Intro)**
+- **Follow Pokémon toggle** – Optional ON/OFF setting for overworld follower Pokémon (first live party member follows you when enabled).
 - **Nuzlocke shiny exception** – In Nuzlocke mode, shiny Pokémon can be caught even if you have already caught a Pokémon on that route or location.
 - **Dedicated full-screen Game Mode menu** – After naming your character, the intro pauses and switches to a dedicated settings-style screen (like the in-game Options menu) instead of showing choices in the dialogue box.
-- **Clean layout** – "GAME MODE" title in its own bordered white text box; Randomizer, Nuzlocke, **Random Evolution**, and Start Game in a second bordered white box with ON/OFF shown inside the window.
+- **Clean layout** – "GAME MODE" title in its own bordered white text box; Randomizer, Nuzlocke, Soul Link, **Random Evolution**, **Follow Pokémon**, and Start Game in a second bordered white box with ON/OFF shown inside the window.
 - **Random Evolution mode** – New optional mode: when ON, Pokémon evolve into a **random valid species** (chosen by RNG at evolution time) instead of their normal evolution.
 
 ### ✨ **Enhanced Difficulty System - COMPLETED!**
@@ -72,7 +79,7 @@ The gym battles, Elite Four, and Champion are now **significantly more challengi
 
 **How to use:**
 - After the intro (naming, etc.), a **Game Mode** screen appears before "Are you ready?"
-- Toggle **Randomizer**, **Nuzlocke**, and/or **Random Evolution** ON or OFF, then choose **Start Game**
+- Toggle **Randomizer**, **Nuzlocke**, **Soul Link**, **Random Evolution**, and/or **Follow Pokémon** ON or OFF, then choose **Start Game**
 - Your choices apply for that playthrough
 
 ---
@@ -87,6 +94,19 @@ The gym battles, Elite Four, and Champion are now **significantly more challengi
 **How to use:**
 - On the **Game Mode** screen before "Are you ready?", toggle **Random Evolution** ON, then **Start Game**.
 - Evolutions throughout the playthrough will be random until you start a new game and turn the mode OFF.
+
+---
+
+## 🐾 **Follow Pokémon Mode**
+
+**What it does:**
+- When enabled, your first conscious, non-egg party Pokémon follows you in the overworld (HGSS-style).
+- Follower updates automatically when your lead party member changes.
+- Respects existing follower restrictions (indoor maps with large sprites, surf/bike states, etc.).
+
+**How to use:**
+- On the **Game Mode** screen before "Are you ready?", toggle **Follow Pokémon** ON, then **Start Game**.
+- Default is OFF; must be enabled at new game (no mid-save toggle yet).
 
 ---
 
@@ -164,6 +184,7 @@ The gym battles, Elite Four, and Champion are now **significantly more challengi
 ## 🛠️ **Technical Improvements**
 
 ### **Recent Fixes (Latest Update)**
+✅ **Follow Pokémon toggle on Game Mode menu**  
 ✅ **Rebased and builds cleanly on latest RHH master**  
 ✅ **System fully tested and operational**  
 ✅ **Memory-efficient battle tracking**  
@@ -192,10 +213,9 @@ The gym battles, Elite Four, and Champion are now **significantly more challengi
 
 ### **New Game Setup**
 1. **Start new game** - Professor Birch introduces new features
-2. **Choose randomization** - Yes/No for randomized playthrough
-3. **Choose Nuzlocke** - Yes/No for additional challenge
-4. **Receive Tera Orb** - from May/Brendan with first Poké Balls
-5. **Begin your journey** - with enhanced difficulty and features!
+2. **Choose game modes** - Toggle Randomizer, Nuzlocke, Soul Link, Random Evolution, and Follow Pokémon ON or OFF
+3. **Receive Tera Orb** - from May/Brendan with first Poké Balls
+4. **Begin your journey** - with enhanced difficulty and features!
 
 ### **Tips for Success**
 - **Prepare for every gym** - no battle is easy anymore
@@ -215,5 +235,5 @@ The gym battles, Elite Four, and Champion are now **significantly more challengi
 
 ---
 
-*Last Updated: July 7, 2026 — rebased onto RHH master*  
+*Last Updated: July 7, 2026 — Follow Pokémon Game Mode toggle*
 *All features are production-ready and enhance the core Pokémon Emerald experience while maintaining game balance and stability. Saves from builds prior to this rebase will not load.*
