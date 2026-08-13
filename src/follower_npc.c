@@ -1723,15 +1723,15 @@ void RestorePartyAfterFollowerNPCBattle(void)
         // Find the caught Pokémon in the current party
         for (i = 0; i < PARTY_SIZE; i++)
         {
-            if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL) != SPECIES_NONE &&
-                GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL) == gBattleResults.caughtMonSpecies)
+            if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES, NULL) != SPECIES_NONE &&
+                GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES, NULL) == gBattleResults.caughtMonSpecies)
             {
                 u8 nickname[POKEMON_NAME_LENGTH + 1];
-                GetMonData(&gPlayerParty[i], MON_DATA_NICKNAME, nickname);
+                GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_NICKNAME, nickname);
                 if (StringCompare(nickname, gBattleResults.caughtMonNick) == 0)
                 {
                     caughtSlot = i;
-                    memcpy(&caughtMon, &gPlayerParty[i], sizeof(struct Pokemon));
+                    memcpy(&caughtMon, &gParties[B_TRAINER_PLAYER][i], sizeof(struct Pokemon));
                     break;
                 }
             }
@@ -1746,11 +1746,11 @@ void RestorePartyAfterFollowerNPCBattle(void)
             // Find an empty slot in the loaded party
             for (i = 0; i < PARTY_SIZE; i++)
             {
-                if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL) == SPECIES_NONE)
+                if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES, NULL) == SPECIES_NONE)
                 {
                     // Add the caught Pokémon to the party
-                    memcpy(&gPlayerParty[i], &caughtMon, sizeof(struct Pokemon));
-                    gPlayerPartyCount = i + 1;
+                    memcpy(&gParties[B_TRAINER_PLAYER][i], &caughtMon, sizeof(struct Pokemon));
+                    gPartiesCount[B_TRAINER_PLAYER] = i + 1;
                     break;
                 }
             }

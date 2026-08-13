@@ -3482,6 +3482,41 @@ const struct FormChange *GetSpeciesFormChanges(enum Species species)
     return formChanges;
 }
 
+u16 GetMegaStoneForSpecies(enum Species species)
+{
+    const struct FormChange *formChanges = GetSpeciesFormChanges(species);
+    u32 i;
+
+    if (formChanges == NULL)
+        return ITEM_NONE;
+
+    for (i = 0; formChanges[i].method != FORM_CHANGE_TERMINATOR; i++)
+    {
+        if (formChanges[i].method == FORM_CHANGE_BATTLE_MEGA_EVOLUTION_ITEM)
+            return formChanges[i].param1;
+    }
+
+    return ITEM_NONE;
+}
+
+bool32 SpeciesCanMegaEvolve(enum Species species)
+{
+    const struct FormChange *formChanges = GetSpeciesFormChanges(species);
+    u32 i;
+
+    if (formChanges == NULL)
+        return FALSE;
+
+    for (i = 0; formChanges[i].method != FORM_CHANGE_TERMINATOR; i++)
+    {
+        if (formChanges[i].method == FORM_CHANGE_BATTLE_MEGA_EVOLUTION_ITEM
+         || formChanges[i].method == FORM_CHANGE_BATTLE_MEGA_EVOLUTION_MOVE)
+            return TRUE;
+    }
+
+    return FALSE;
+}
+
 u8 CalculatePPWithBonus(enum Move move, u8 ppBonuses, u8 moveIndex)
 {
     u8 basePP = GetMovePP(move);

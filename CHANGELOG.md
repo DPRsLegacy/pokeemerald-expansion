@@ -7,6 +7,17 @@
 
 ## 🚀 **What's New (Latest Update)**
 
+### 🎛️ **Story Trainers Use Mega Evolution**
+- **Gym Leaders, Elite Four, Champion, rivals, and Team Aqua/Magma admins and leaders Mega Evolve** when they have a Pokémon that can.
+- **One Mega per battle** – Prefers the ace if it can Mega Evolve; otherwise uses the last Mega-capable Pokémon on the team.
+- **Matching Mega Stone is given automatically** – The chosen Pokémon holds the correct Mega Stone (for example Manectricite, Absolite, Salamencite). Rayquaza-style Megas that need a move still work without replacing the held item.
+- **Does not stack with Tera/Dynamax on the same Pokémon** – The Mega Pokémon is not also flagged to Terastallize or Dynamax.
+
+### 🎛️ **Mauville Pokémon Center Mega Stone Dealer**
+- **Mega Stone shop in Mauville Pokémon Center** – A new NPC in Mauville City Pokémon Center 1F sells every Mega Stone: original Mega Evolutions, Legends Z-A Megas, and Mega Dimension DLC Megas (including Mega X/Y and Mega Z stones).
+- **¥1800 each** – All Mega Stones use a custom mart price of **¥1800**. The clerk does not mention the price in dialogue; it appears in the shop menu.
+- **Locked until Wattson is defeated** – The shop only opens after you earn the Dynamo Badge (`FLAG_BADGE03_GET`). Before then, the dealer says they only sell to trainers who have defeated Gym Leader Wattson.
+
 ### 🎛️ **Follow Pokémon on Game Mode Menu**
 - **Follow Pokémon toggle** – New optional setting on the intro **Game Mode** screen. When ON, your first conscious party Pokémon follows you in the overworld (HGSS-style).
 - **Independent toggle** – Works like Randomizer, Nuzlocke, Soul Link, and Random Evolution; not tied to Nuzlocke mode.
@@ -63,6 +74,7 @@ The gym battles, Elite Four, and Champion are now **significantly more challengi
 **⚡ Battle Gimmicks:**
 - **Terastallization**: Available in all main story battles
 - **Dynamax**: Restricted to gyms 3-8, Elite Four, and Champion (ace Pokémon only)
+- **Mega Evolution**: All mega evolutions are now in the game and mega stones are avaliable for sale in the Mauville City poke center
 - **Strategic depth**: Every battle now requires preparation and skill
 
 ---

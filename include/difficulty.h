@@ -32,6 +32,7 @@ enum DifficultyScaling GetCurrentDifficultyScaling(void);
 u64 GetEnhancedAIFlags(u16 trainerId, enum DifficultyScaling scaling);
 bool8 ShouldTrainerUseTerastallization(u16 trainerId, enum DifficultyScaling scaling);
 bool8 ShouldTrainerUseDynamax(u16 trainerId, enum DifficultyScaling scaling);
+bool8 ShouldTrainerClassUseMegaEvolution(u32 trainerClass);
 const u16* GetEnhancedTrainerItems(u16 trainerId, enum DifficultyScaling scaling);
 u8 GetEnhancedTrainerMonLevel(u8 baseLevel, enum DifficultyScaling scaling);
 u32 GetEnhancedTrainerMonIVs(u32 baseIVs, enum DifficultyScaling scaling);

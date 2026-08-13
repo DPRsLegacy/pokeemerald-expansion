@@ -217,6 +217,21 @@ bool8 ShouldTrainerUseDynamax(u16 trainerId, enum DifficultyScaling scaling)
     return FALSE;
 }
 
+bool8 ShouldTrainerClassUseMegaEvolution(u32 trainerClass)
+{
+    if (!P_MEGA_EVOLUTIONS)
+        return FALSE;
+
+    return (trainerClass == TRAINER_CLASS_LEADER
+         || trainerClass == TRAINER_CLASS_ELITE_FOUR
+         || trainerClass == TRAINER_CLASS_CHAMPION
+         || trainerClass == TRAINER_CLASS_RIVAL
+         || trainerClass == TRAINER_CLASS_AQUA_ADMIN
+         || trainerClass == TRAINER_CLASS_MAGMA_ADMIN
+         || trainerClass == TRAINER_CLASS_AQUA_LEADER
+         || trainerClass == TRAINER_CLASS_MAGMA_LEADER);
+}
+
 // Get enhanced trainer items based on difficulty scaling
 const u16* GetEnhancedTrainerItems(u16 trainerId, enum DifficultyScaling scaling)
 {

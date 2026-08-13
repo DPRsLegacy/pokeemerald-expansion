@@ -94,6 +94,7 @@ static void CB2_HandleStartBattle(void);
 static void TryCorrectShedinjaLanguage(struct Pokemon *mon);
 static enum BattleTrainer GetBattlerTrainerFromParty(struct Pokemon *party);
 static u8 CreateNPCTrainerParty(struct Pokemon *party, u16 trainerNum);
+static u16 GetTrainerBattleSpecies(const struct TrainerMon *partyMon, u32 slot);
 static void BattleMainCB1(void);
 static void CB2_EndLinkBattle(void);
 static void EndLinkBattleInSteps(void);
@@ -1881,6 +1882,20 @@ static void AssignRandomMovesToMon(struct Pokemon *mon, u32 seed)
     }
 }
 
+static u16 GetTrainerBattleSpecies(const struct TrainerMon *partyMon, u32 slot)
+{
+    u16 species = partyMon->species;
+
+    if (gSaveBlock2Ptr->randomizerEnabled)
+    {
+        u32 seed = gSaveBlock2Ptr->encryptionKey + slot + partyMon->species;
+        SeedRng(seed);
+        species = GetRandomValidPokemon();
+    }
+
+    return species;
+}
+
 void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon *partyEntry)
 {
     bool32 noMoveSet = TRUE;
@@ -1942,6 +1957,20 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
         u32 monIndices[monsCount];
         DoTrainerPartyPool(trainer, monIndices, monsCount, battleTypeFlags);
 
+        s32 megaSlot = -1;
+        if (ShouldTrainerClassUseMegaEvolution(trainer->trainerClass))
+        {
+            for (s32 slot = monsCount - 1; slot >= 0; slot--)
+            {
+                u16 species = GetTrainerBattleSpecies(&trainer->party[monIndices[slot]], slot);
+                if (SpeciesCanMegaEvolve(species))
+                {
+                    megaSlot = slot;
+                    break;
+                }
+            }
+        }
+
         for (s32 i = 0; i < monsCount; i++)
         {
             u32 monIndex = monIndices[i];
@@ -1971,17 +2000,10 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 otId.method = OT_ID_PRESET;
                 otId.value = HIHALF(personalityValue) ^ LOHALF(personalityValue);
             }
-            u16 speciesForTrainer = partyData[monIndex].species;
+            u16 speciesForTrainer = GetTrainerBattleSpecies(&partyData[monIndex], i);
             u8 enhancedLevel = partyData[monIndex].lvl;
             u32 enhancedIVs = partyData[monIndex].iv;
             const u16 *enhancedItems = NULL;
-
-            if (gSaveBlock2Ptr->randomizerEnabled)
-            {
-                u32 seed = gSaveBlock2Ptr->encryptionKey + i + partyData[monIndex].species;
-                SeedRng(seed);
-                speciesForTrainer = GetRandomValidPokemon();
-            }
 
             if (IsMajorBattle(trainer->trainerClass))
             {
@@ -1990,7 +2012,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 enhancedIVs = GetEnhancedTrainerMonIVs(partyData[monIndex].iv, scaling);
                 enhancedItems = GetEnhancedTrainerItems(trainer->trainerClass, scaling);
 
-                if (ShouldTrainerUseTerastallization(trainer->trainerClass, scaling))
+                if (i != megaSlot && ShouldTrainerUseTerastallization(trainer->trainerClass, scaling))
                 {
                     if (trainer->trainerClass == TRAINER_CLASS_LEADER)
                     {
@@ -2018,7 +2040,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                     }
                 }
 
-                if (ShouldTrainerUseDynamax(trainer->trainerClass, scaling))
+                if (i != megaSlot && ShouldTrainerUseDynamax(trainer->trainerClass, scaling))
                 {
                     if (trainer->trainerClass == TRAINER_CLASS_LEADER
                      || trainer->trainerClass == TRAINER_CLASS_ELITE_FOUR
@@ -2054,6 +2076,13 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 SetMonData(&party[i], MON_DATA_HELD_ITEM, &enhancedItems[i % MAX_TRAINER_ITEMS]);
             else
                 SetMonData(&party[i], MON_DATA_HELD_ITEM, &partyData[monIndex].heldItem);
+
+            if (i == megaSlot)
+            {
+                u16 megaStone = GetMegaStoneForSpecies(speciesForTrainer);
+                if (megaStone != ITEM_NONE)
+                    SetMonData(&party[i], MON_DATA_HELD_ITEM, &megaStone);
+            }
 
             CustomTrainerPartyAssignMoves(&party[i], &partyData[monIndex]);
             SetMonData(&party[i], MON_DATA_IVS, &enhancedIVs);
@@ -2102,7 +2131,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 bool32 data = TRUE;
                 SetMonData(&party[i], MON_DATA_IS_SHINY, &data);
             }
-            if (partyData[monIndex].dynamaxLevel > 0)
+            if (i != megaSlot && partyData[monIndex].dynamaxLevel > 0)
             {
                 u32 data = partyData[monIndex].dynamaxLevel;
                 if (partyData[monIndex].shouldUseDynamax)
@@ -2114,7 +2143,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 u32 data = partyData[monIndex].gigantamaxFactor;
                 SetMonData(&party[i], MON_DATA_GIGANTAMAX_FACTOR, &data);
             }
-            if (partyData[monIndex].teraType > 0)
+            if (i != megaSlot && partyData[monIndex].teraType > 0)
             {
                 gBattleStruct->opponentMonCanTera |= 1 << i;
                 enum Type data = partyData[monIndex].teraType;

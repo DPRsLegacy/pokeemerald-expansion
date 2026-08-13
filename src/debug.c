@@ -4975,7 +4975,7 @@ void SetHiddenNature(void)
     u8 partyIndex = gSpecialVar_0x8004;
     u32 nature = gSpecialVar_Result;
     if (partyIndex < PARTY_SIZE && nature < NUM_NATURES)
-        SetMonData(&gPlayerParty[partyIndex], MON_DATA_HIDDEN_NATURE, &nature);
+        SetMonData(&gParties[B_TRAINER_PLAYER][partyIndex], MON_DATA_HIDDEN_NATURE, &nature);
 }
 
 void SetAbility(void)
@@ -4983,5 +4983,5 @@ void SetAbility(void)
     u8 partyIndex = gSpecialVar_0x8004;
     u32 abilityNum = gSpecialVar_Result;
     if (partyIndex < PARTY_SIZE && abilityNum <= 2)
-        SetMonData(&gPlayerParty[partyIndex], MON_DATA_ABILITY_NUM, &abilityNum);
+        SetMonData(&gParties[B_TRAINER_PLAYER][partyIndex], MON_DATA_ABILITY_NUM, &abilityNum);
 }
