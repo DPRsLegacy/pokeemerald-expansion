@@ -7,6 +7,11 @@
 
 ## 🚀 **What's New (Latest Update)**
 
+### 🪦 **MegaGraveSite on Route 103**
+- **New map west of Route 103** – Stepping onto the unmarked tiles at the west side of Route 103 teleports you to MegaGraveSite (Smitty Werben Man Jensen’s grave). The same tiles on the east side of the grave site send you back. No cave-door graphics; the ground stays matching.
+- **Mega Ring from the grave** – Read the gravestone to receive the **Mega Ring** (once). That is the key item that lets your Pokémon Mega Evolve in battle if they hold the matching Mega Stone.
+- **Hidden Big Pearl** – A hidden Big Pearl sits next to the grave.
+
 ### 🎛️ **Story Trainers Use Mega Evolution**
 - **Gym Leaders, Elite Four, Champion, rivals, and Team Aqua/Magma admins and leaders Mega Evolve** when they have a Pokémon that can.
 - **One Mega per battle** – Prefers the ace if it can Mega Evolve; otherwise uses the last Mega-capable Pokémon on the team.

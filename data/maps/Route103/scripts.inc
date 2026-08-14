@@ -17,6 +17,13 @@ Route103_EventScript_OpenAlteringCave::
 	setmetatile 45, 6, METATILE_General_CaveEntrance_Bottom, FALSE
 	return
 
+Route103_EventScript_EnterMegaGraveSite::
+	lockall
+	warpteleport MAP_MEGA_GRAVE_SITE, 18, 16
+	waitstate
+	releaseall
+	end
+
 Route103_EventScript_Rival::
 	lockall
 	checkplayergender
